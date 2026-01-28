@@ -12,13 +12,17 @@ export const metadata: Metadata = {
 export default async function ArticlesPage() {
   const supabase = await createClient()
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('articles')
     .select(
       'id, title, status, created_at, updated_at, published_at, content, author_id, profiles(display_name)'
     )
     .order('created_at', { ascending: false })
     .range(0, PAGE_SIZE - 1)
+
+  if (error) {
+    console.error('Failed to fetch initial articles:', error.message)
+  }
 
   const initialArticles = (data ?? []) as unknown as Article[]
 

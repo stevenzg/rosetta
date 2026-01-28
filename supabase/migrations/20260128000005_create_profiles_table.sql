@@ -35,6 +35,11 @@ CREATE TRIGGER on_auth_user_created
 -- RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- Note: This policy exposes display_name and role to all users (including
+-- unauthenticated). The role column is publicly readable so the client can
+-- determine editor vs viewer permissions. If role assignments should be private
+-- in the future, consider restricting this policy to authenticated users or
+-- creating a view that omits the role column for anonymous access.
 CREATE POLICY "Profiles are viewable by everyone"
     ON public.profiles FOR SELECT
     USING (true);

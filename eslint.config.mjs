@@ -27,9 +27,20 @@ export default [
     },
     rules: {
       'no-console': 'warn',
+      'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'error',
-      'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: ['**/*.{js,jsx,mjs}'],
+    rules: {
+      'no-unused-vars': 'error',
     },
   },
 ];

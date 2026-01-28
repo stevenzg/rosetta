@@ -56,6 +56,10 @@ export function useUser(): UseUserReturn {
       // Skip INITIAL_SESSION since loadUser() already handles the initial fetch
       if (event === 'INITIAL_SESSION') return
 
+      // Guard the entire callback with the `ignore` flag to prevent state
+      // updates after the component has unmounted (i.e. after cleanup runs).
+      if (ignore) return
+
       setUser(session?.user ?? null)
       if (session?.user) {
         const profileData = await fetchProfile(session.user.id)

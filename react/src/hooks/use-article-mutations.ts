@@ -6,6 +6,10 @@ import type { Article, ArticleFormData } from '@/lib/types/articles'
 
 const supabase = createClient()
 
+// Note: A single `isSubmitting` flag is shared across create, update, and delete
+// operations. This means concurrent mutations are not supported — if one mutation
+// is in flight, the UI should disable all mutation triggers. This is acceptable
+// for the current modal-based UX where only one operation is active at a time.
 interface MutationState {
   isSubmitting: boolean
   error: string | null

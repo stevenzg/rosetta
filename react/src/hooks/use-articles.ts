@@ -63,7 +63,8 @@ export function useArticles({
         .range(offset, offset + PAGE_SIZE - 1)
 
       if (search) {
-        query = query.ilike('title', `%${search}%`)
+        const escaped = search.replace(/%/g, '\\%').replace(/_/g, '\\_')
+        query = query.ilike('title', `%${escaped}%`)
       }
       if (status && status !== 'all') {
         query = query.eq('status', status)
@@ -76,6 +77,9 @@ export function useArticles({
       if (fetchError) {
         setError(fetchError.message)
       } else {
+        // Supabase returns joined `profiles` as a nested object which doesn't
+        // match generated DB types exactly. We cast here; a future improvement
+        // would be to use `supabase gen types typescript` for end-to-end type safety.
         const fetched = (data ?? []) as unknown as Article[]
         setArticles((prev) => (reset ? fetched : [...prev, ...fetched]))
         setHasMore(fetched.length === PAGE_SIZE)
@@ -88,8 +92,13 @@ export function useArticles({
     [search, status]
   )
 
+  // Lifecycle explanation:
+  // `fetchPage` is recreated (via useCallback deps) whenever `search` or `status` changes.
+  // On the very first render, if `initialArticles` were provided by the server, we skip
+  // the client-side fetch (the `initialLoadSkipped` ref guard). On subsequent renders,
+  // when `fetchPage` identity changes due to a filter/search update, `initialLoadSkipped`
+  // is already `true`, so the guard is bypassed and a fresh fetch is triggered.
   useEffect(() => {
-    // Skip the first client-side fetch if server provided initial data
     if (hasInitial && !initialLoadSkipped.current) {
       initialLoadSkipped.current = true
       return

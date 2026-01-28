@@ -35,6 +35,7 @@ export function ArticleDialog({
           </DialogTitle>
         </DialogHeader>
         <ArticleForm
+          key={article?.id ?? 'create'}
           mode={mode}
           defaultValues={article}
           onSubmit={onSubmit}
