@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { PAGE_SIZE } from '@/lib/constants'
-import type { Article } from '@/lib/types/articles'
+import { type Article, parseArticle } from '@/lib/types/articles'
 
 const supabase = createClient()
 
@@ -77,10 +77,7 @@ export function useArticles({
       if (fetchError) {
         setError(fetchError.message)
       } else {
-        // Supabase returns joined `profiles` as a nested object which doesn't
-        // match generated DB types exactly. We cast here; a future improvement
-        // would be to use `supabase gen types typescript` for end-to-end type safety.
-        const fetched = (data ?? []) as unknown as Article[]
+        const fetched = (data ?? []).map(parseArticle)
         setArticles((prev) => (reset ? fetched : [...prev, ...fetched]))
         setHasMore(fetched.length === PAGE_SIZE)
         setPage(pageNum)

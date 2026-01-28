@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { PAGE_SIZE } from '@/lib/constants'
 import { ArticleList } from '@/components/articles/article-list'
-import type { Article } from '@/lib/types/articles'
+import { type Article, parseArticle } from '@/lib/types/articles'
 
 export const metadata: Metadata = {
   title: 'Articles - Rosetta',
@@ -24,7 +24,9 @@ export default async function ArticlesPage() {
     console.error('Failed to fetch initial articles:', error.message)
   }
 
-  const initialArticles = (data ?? []) as unknown as Article[]
+  const initialArticles: Article[] = (data ?? []).map((row) =>
+    parseArticle(row as Record<string, unknown>)
+  )
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">

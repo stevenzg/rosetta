@@ -2,7 +2,11 @@
 
 import { useCallback, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { Article, ArticleFormData } from '@/lib/types/articles'
+import {
+  type Article,
+  type ArticleFormData,
+  parseArticle,
+} from '@/lib/types/articles'
 
 const supabase = createClient()
 
@@ -70,7 +74,10 @@ export function useArticleMutations(): UseArticleMutationsReturn {
       }
 
       setState({ isSubmitting: false, error: null })
-      return { data: article as unknown as Article, error: null }
+      return {
+        data: parseArticle(article as Record<string, unknown>),
+        error: null,
+      }
     },
     []
   )
@@ -101,7 +108,10 @@ export function useArticleMutations(): UseArticleMutationsReturn {
       }
 
       setState({ isSubmitting: false, error: null })
-      return { data: article as unknown as Article, error: null }
+      return {
+        data: parseArticle(article as Record<string, unknown>),
+        error: null,
+      }
     },
     []
   )
