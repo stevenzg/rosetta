@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import type { UserProfile, UserRole } from '@/lib/types/articles'
 import type { User } from '@supabase/supabase-js'
 
+const supabase = createClient()
+
 interface UseUserReturn {
   user: User | null
   profile: UserProfile | null
@@ -14,60 +16,66 @@ interface UseUserReturn {
   signOut: () => Promise<void>
 }
 
+async function fetchProfile(userId: string): Promise<UserProfile | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, display_name, role')
+    .eq('id', userId)
+    .single()
+  return data as UserProfile | null
+}
+
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
+    let ignore = false
+
     async function loadUser() {
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser()
+
+      if (ignore) return
       setUser(currentUser)
 
       if (currentUser) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id, display_name, role')
-          .eq('id', currentUser.id)
-          .single()
-        if (data) {
-          setProfile(data as UserProfile)
-        }
+        const profileData = await fetchProfile(currentUser.id)
+        if (!ignore) setProfile(profileData)
       }
-      setIsLoading(false)
+      if (!ignore) setIsLoading(false)
     }
 
     loadUser()
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Skip INITIAL_SESSION since loadUser() already handles the initial fetch
+      if (event === 'INITIAL_SESSION') return
+
       setUser(session?.user ?? null)
       if (session?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id, display_name, role')
-          .eq('id', session.user.id)
-          .single()
-        if (data) {
-          setProfile(data as UserProfile)
-        }
+        const profileData = await fetchProfile(session.user.id)
+        if (!ignore) setProfile(profileData)
       } else {
         setProfile(null)
       }
     })
 
-    return () => subscription.unsubscribe()
-  }, [supabase])
+    return () => {
+      ignore = true
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
-  }, [supabase])
+  }, [])
 
   const role: UserRole = profile?.role ?? 'viewer'
 

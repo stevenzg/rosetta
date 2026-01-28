@@ -61,7 +61,7 @@ export function ArticleForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    await onSubmit({ title: title.trim(), content, status })
+    await onSubmit({ title: title.trim(), content: content || null, status })
   }
 
   const titleErrorId = errors.title ? 'title-error' : undefined

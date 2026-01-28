@@ -4,15 +4,27 @@ import { useCallback, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Article, ArticleFormData } from '@/lib/types/articles'
 
+const supabase = createClient()
+
 interface MutationState {
   isSubmitting: boolean
   error: string | null
 }
 
+interface MutationResult<T> {
+  data: T
+  error: string | null
+}
+
 interface UseArticleMutationsReturn {
-  createArticle: (data: ArticleFormData) => Promise<Article | null>
-  updateArticle: (id: string, data: ArticleFormData) => Promise<Article | null>
-  deleteArticle: (id: string) => Promise<boolean>
+  createArticle: (
+    data: ArticleFormData
+  ) => Promise<MutationResult<Article | null>>
+  updateArticle: (
+    id: string,
+    data: ArticleFormData
+  ) => Promise<MutationResult<Article | null>>
+  deleteArticle: (id: string) => Promise<MutationResult<boolean>>
   state: MutationState
 }
 
@@ -21,18 +33,18 @@ export function useArticleMutations(): UseArticleMutationsReturn {
     isSubmitting: false,
     error: null,
   })
-  const supabase = createClient()
 
   const createArticle = useCallback(
-    async (data: ArticleFormData): Promise<Article | null> => {
+    async (data: ArticleFormData): Promise<MutationResult<Article | null>> => {
       setState({ isSubmitting: true, error: null })
 
       const {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) {
-        setState({ isSubmitting: false, error: 'You must be signed in' })
-        return null
+        const error = 'You must be signed in'
+        setState({ isSubmitting: false, error })
+        return { data: null, error }
       }
 
       const { data: article, error } = await supabase
@@ -50,17 +62,20 @@ export function useArticleMutations(): UseArticleMutationsReturn {
 
       if (error) {
         setState({ isSubmitting: false, error: error.message })
-        return null
+        return { data: null, error: error.message }
       }
 
       setState({ isSubmitting: false, error: null })
-      return article as unknown as Article
+      return { data: article as unknown as Article, error: null }
     },
-    [supabase]
+    []
   )
 
   const updateArticle = useCallback(
-    async (id: string, data: ArticleFormData): Promise<Article | null> => {
+    async (
+      id: string,
+      data: ArticleFormData
+    ): Promise<MutationResult<Article | null>> => {
       setState({ isSubmitting: true, error: null })
 
       const { data: article, error } = await supabase
@@ -78,30 +93,30 @@ export function useArticleMutations(): UseArticleMutationsReturn {
 
       if (error) {
         setState({ isSubmitting: false, error: error.message })
-        return null
+        return { data: null, error: error.message }
       }
 
       setState({ isSubmitting: false, error: null })
-      return article as unknown as Article
+      return { data: article as unknown as Article, error: null }
     },
-    [supabase]
+    []
   )
 
   const deleteArticle = useCallback(
-    async (id: string): Promise<boolean> => {
+    async (id: string): Promise<MutationResult<boolean>> => {
       setState({ isSubmitting: true, error: null })
 
       const { error } = await supabase.from('articles').delete().eq('id', id)
 
       if (error) {
         setState({ isSubmitting: false, error: error.message })
-        return false
+        return { data: false, error: error.message }
       }
 
       setState({ isSubmitting: false, error: null })
-      return true
+      return { data: true, error: null }
     },
-    [supabase]
+    []
   )
 
   return { createArticle, updateArticle, deleteArticle, state }

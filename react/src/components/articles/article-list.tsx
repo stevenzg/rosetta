@@ -14,7 +14,11 @@ import { useArticleMutations } from '@/hooks/use-article-mutations'
 import { useUser } from '@/hooks/use-user'
 import type { Article, ArticleFormData } from '@/lib/types/articles'
 
-export function ArticleList() {
+interface ArticleListProps {
+  initialArticles?: Article[]
+}
+
+export function ArticleList({ initialArticles }: ArticleListProps) {
   const { isEditor, isLoading: isUserLoading } = useUser()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
@@ -28,7 +32,7 @@ export function ArticleList() {
     fetchNextPage,
     retry,
     setArticles,
-  } = useArticles({ search, status })
+  } = useArticles({ search, status, initialArticles })
 
   const {
     createArticle,
@@ -83,50 +87,43 @@ export function ArticleList() {
   const handleFormSubmit = useCallback(
     async (data: ArticleFormData) => {
       if (dialogMode === 'create') {
-        const newArticle = await createArticle(data)
-        if (newArticle) {
-          setArticles((prev) => [newArticle, ...prev])
+        const result = await createArticle(data)
+        if (result.data) {
+          setArticles((prev) => [result.data!, ...prev])
           setDialogOpen(false)
           toast.success('Article created successfully')
         } else {
-          toast.error(mutationState.error ?? 'Failed to create article')
+          toast.error(result.error ?? 'Failed to create article')
         }
       } else if (editingArticle) {
-        const updated = await updateArticle(editingArticle.id, data)
-        if (updated) {
+        const result = await updateArticle(editingArticle.id, data)
+        if (result.data) {
           setArticles((prev) =>
-            prev.map((a) => (a.id === updated.id ? updated : a))
+            prev.map((a) => (a.id === result.data!.id ? result.data! : a))
           )
           setDialogOpen(false)
           toast.success('Article updated successfully')
         } else {
-          toast.error(mutationState.error ?? 'Failed to update article')
+          toast.error(result.error ?? 'Failed to update article')
         }
       }
     },
-    [
-      dialogMode,
-      editingArticle,
-      createArticle,
-      updateArticle,
-      setArticles,
-      mutationState.error,
-    ]
+    [dialogMode, editingArticle, createArticle, updateArticle, setArticles]
   )
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deletingArticle) return
-    const success = await deleteArticle(deletingArticle.id)
-    if (success) {
+    const result = await deleteArticle(deletingArticle.id)
+    if (result.data) {
       setArticles((prev) => prev.filter((a) => a.id !== deletingArticle.id))
       setDeleteDialogOpen(false)
       setDeletingArticle(null)
       toast.success('Article deleted successfully')
       createBtnRef.current?.focus()
     } else {
-      toast.error(mutationState.error ?? 'Failed to delete article')
+      toast.error(result.error ?? 'Failed to delete article')
     }
-  }, [deletingArticle, deleteArticle, setArticles, mutationState.error])
+  }, [deletingArticle, deleteArticle, setArticles])
 
   if (isUserLoading) {
     return <ArticleListSkeleton count={5} />

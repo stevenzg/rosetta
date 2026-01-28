@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import globals from 'globals';
 
 export default [
   {
@@ -16,33 +17,9 @@ export default [
         sourceType: 'module',
       },
       globals: {
-        console: 'readonly',
-        process: 'readonly',
-        Buffer: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        global: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        exports: 'readonly',
+        ...globals.node,
+        ...globals.browser,
         React: 'readonly',
-        URL: 'readonly',
-        Request: 'readonly',
-        Response: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        HTMLDivElement: 'readonly',
-        HTMLButtonElement: 'readonly',
-        HTMLFormElement: 'readonly',
-        HTMLInputElement: 'readonly',
-        IntersectionObserver: 'readonly',
-        document: 'readonly',
-        window: 'readonly',
-        localStorage: 'readonly',
-        fetch: 'readonly',
-        FormData: 'readonly',
       },
     },
     plugins: {

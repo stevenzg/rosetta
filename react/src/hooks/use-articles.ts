@@ -5,9 +5,12 @@ import { createClient } from '@/lib/supabase/client'
 import { PAGE_SIZE } from '@/lib/constants'
 import type { Article } from '@/lib/types/articles'
 
+const supabase = createClient()
+
 interface UseArticlesOptions {
   search: string
   status: string
+  initialArticles?: Article[]
 }
 
 interface UseArticlesReturn {
@@ -24,15 +27,19 @@ interface UseArticlesReturn {
 export function useArticles({
   search,
   status,
+  initialArticles,
 }: UseArticlesOptions): UseArticlesReturn {
-  const [articles, setArticles] = useState<Article[]>([])
+  const hasInitial = initialArticles && initialArticles.length > 0
+  const [articles, setArticles] = useState<Article[]>(initialArticles ?? [])
   const [page, setPage] = useState(0)
-  const [hasMore, setHasMore] = useState(true)
-  const [isLoading, setIsLoading] = useState(true)
+  const [hasMore, setHasMore] = useState(
+    hasInitial ? initialArticles.length === PAGE_SIZE : true
+  )
+  const [isLoading, setIsLoading] = useState(!hasInitial)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
   const abortRef = useRef(0)
+  const initialLoadSkipped = useRef(false)
 
   const fetchPage = useCallback(
     async (pageNum: number, reset = false) => {
@@ -78,10 +85,15 @@ export function useArticles({
       setIsLoading(false)
       setIsLoadingMore(false)
     },
-    [supabase, search, status]
+    [search, status]
   )
 
   useEffect(() => {
+    // Skip the first client-side fetch if server provided initial data
+    if (hasInitial && !initialLoadSkipped.current) {
+      initialLoadSkipped.current = true
+      return
+    }
     setPage(0)
     setHasMore(true)
     fetchPage(0, true)

@@ -14,7 +14,7 @@ export interface Article {
 
 export interface ArticleFormData {
   title: string
-  content: string
+  content: string | null
   status: ArticleStatus
 }
 
