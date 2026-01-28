@@ -4,9 +4,6 @@
 -- Index for filtering by author
 CREATE INDEX idx_articles_author_id ON public.articles(author_id);
 
--- Index for filtering by status
-CREATE INDEX idx_articles_status ON public.articles(status);
-
 -- Index for default ordering by created date (descending for most recent first)
 CREATE INDEX idx_articles_created_at ON public.articles(created_at DESC);
 
