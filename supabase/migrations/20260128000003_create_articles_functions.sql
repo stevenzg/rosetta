@@ -31,7 +31,7 @@ BEGIN
             NEW.published_at = NOW();
         END IF;
     ELSIF TG_OP = 'UPDATE' THEN
-        IF NEW.status = 'published' AND (OLD.status != 'published' OR OLD.status IS NULL) AND NEW.published_at IS NULL THEN
+        IF NEW.status = 'published' AND OLD.status != 'published' AND NEW.published_at IS NULL THEN
             NEW.published_at = NOW();
         END IF;
     END IF;

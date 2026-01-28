@@ -11,6 +11,9 @@ CREATE INDEX idx_articles_status ON public.articles(status);
 CREATE INDEX idx_articles_created_at ON public.articles(created_at DESC);
 
 -- GIN index for full-text search on title
+-- NOTE: Uses 'english' language configuration for stemming and stop words.
+-- For multi-language support, consider using 'simple' configuration instead,
+-- or storing language per article and using a separate index per language.
 CREATE INDEX idx_articles_title_search ON public.articles USING gin(to_tsvector('english', title));
 
 -- Composite index for filtered pagination (status + created_at)
