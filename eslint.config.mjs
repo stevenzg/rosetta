@@ -17,9 +17,10 @@ export default [
         sourceType: 'module',
       },
       globals: {
-        ...globals.node,
         ...globals.browser,
         React: 'readonly',
+        // Next.js injects `process.env` at build time for NEXT_PUBLIC_* vars
+        process: 'readonly',
       },
     },
     plugins: {
@@ -28,6 +29,21 @@ export default [
     rules: {
       'no-console': 'warn',
       'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: [
+      '**/middleware.ts',
+      '**/supabase/server.ts',
+      '**/route.ts',
+      '*.config.{js,mjs,ts}',
+      '**/vitest.config.ts',
+      'eslint.config.mjs',
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
     },
   },
   {

@@ -18,11 +18,18 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError(null)
 
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail || !password) {
+      setError('Please enter both email and password.')
+      return
+    }
+
+    setIsLoading(true)
+
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
+      email: trimmedEmail,
       password,
     })
 

@@ -88,8 +88,9 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
     async (data: ArticleFormData) => {
       if (dialogMode === 'create') {
         const result = await createArticle(data)
-        if (result.data) {
-          setArticles((prev) => [result.data!, ...prev])
+        const created = result.data
+        if (created) {
+          setArticles((prev) => [created, ...prev])
           setDialogOpen(false)
           toast.success('Article created successfully')
         } else {
@@ -97,9 +98,10 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
         }
       } else if (editingArticle) {
         const result = await updateArticle(editingArticle.id, data)
-        if (result.data) {
+        const updated = result.data
+        if (updated) {
           setArticles((prev) =>
-            prev.map((a) => (a.id === result.data!.id ? result.data! : a))
+            prev.map((a) => (a.id === updated.id ? updated : a))
           )
           setDialogOpen(false)
           toast.success('Article updated successfully')

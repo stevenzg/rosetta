@@ -20,8 +20,16 @@ export interface Article {
  * rather than silent type lies.  When Supabase generated types are adopted
  * (`supabase gen types typescript`) this function can be removed.
  */
- 
-export function parseArticle(row: Record<string, any>): Article {
+
+export function parseArticle(input: unknown): Article {
+  if (typeof input !== 'object' || input === null) {
+    throw new Error(
+      `Article validation failed: expected an object, got ${input === null ? 'null' : typeof input}.`
+    )
+  }
+
+  const row = input as Record<string, unknown>
+
   if (typeof row.id !== 'string') {
     throw new Error(
       `Article validation failed: expected id to be string, got ${typeof row.id}. Row: ${JSON.stringify(row)}`
@@ -69,6 +77,11 @@ export function parseArticle(row: Record<string, any>): Article {
 
   let profiles: { display_name: string } | null = null
   if (row.profiles != null) {
+    if (typeof row.profiles !== 'object') {
+      throw new Error(
+        `Article validation failed: expected profiles to be an object, got ${typeof row.profiles}. Row: ${JSON.stringify(row)}`
+      )
+    }
     const p = row.profiles as Record<string, unknown>
     if (typeof p.display_name !== 'string') {
       throw new Error(
@@ -82,7 +95,7 @@ export function parseArticle(row: Record<string, any>): Article {
     id: row.id,
     title: row.title,
     content: (row.content as string) ?? null,
-    status: row.status,
+    status: row.status as ArticleStatus,
     author_id: row.author_id,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -103,4 +116,42 @@ export interface UserProfile {
   id: string
   display_name: string
   role: UserRole
+}
+
+/**
+ * Runtime validation for raw Supabase profile rows.
+ *
+ * This mirrors `parseArticle` to ensure profile data from Supabase is
+ * validated at runtime rather than relying on unsafe type casts.
+ */
+export function parseProfile(input: unknown): UserProfile {
+  if (typeof input !== 'object' || input === null) {
+    throw new Error(
+      `Profile validation failed: expected an object, got ${input === null ? 'null' : typeof input}.`
+    )
+  }
+
+  const row = input as Record<string, unknown>
+
+  if (typeof row.id !== 'string') {
+    throw new Error(
+      `Profile validation failed: expected id to be string, got ${typeof row.id}.`
+    )
+  }
+  if (typeof row.display_name !== 'string') {
+    throw new Error(
+      `Profile validation failed: expected display_name to be string, got ${typeof row.display_name}.`
+    )
+  }
+  if (row.role !== 'viewer' && row.role !== 'editor') {
+    throw new Error(
+      `Profile validation failed: expected role to be 'viewer' | 'editor', got '${String(row.role)}'.`
+    )
+  }
+
+  return {
+    id: row.id,
+    display_name: row.display_name,
+    role: row.role,
+  }
 }

@@ -39,11 +39,17 @@ export function useArticles({
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef(0)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const initialLoadSkipped = useRef(false)
 
   const fetchPage = useCallback(
     async (pageNum: number, reset = false) => {
       const fetchId = ++abortRef.current
+
+      // Cancel any in-flight request before starting a new one
+      abortControllerRef.current?.abort()
+      const controller = new AbortController()
+      abortControllerRef.current = controller
 
       if (reset) {
         setIsLoading(true)
@@ -61,6 +67,7 @@ export function useArticles({
         )
         .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1)
+        .abortSignal(controller.signal)
 
       if (search) {
         const escaped = search.replace(/%/g, '\\%').replace(/_/g, '\\_')
@@ -75,6 +82,8 @@ export function useArticles({
       if (fetchId !== abortRef.current) return
 
       if (fetchError) {
+        // Ignore abort errors — they are expected when a new fetch supersedes the old one
+        if (controller.signal.aborted) return
         setError(fetchError.message)
       } else {
         const fetched = (data ?? []).map(parseArticle)

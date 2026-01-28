@@ -14,6 +14,7 @@ const { mockFrom, mockResolvedData } = vi.hoisted(() => {
   builder.select = vi.fn(chainMethod)
   builder.order = vi.fn(chainMethod)
   builder.range = vi.fn(chainMethod)
+  builder.abortSignal = vi.fn(chainMethod)
   builder.ilike = vi.fn(chainMethod)
   builder.eq = vi.fn(chainMethod)
   builder.then = vi.fn((resolve: (v: unknown) => void) => {

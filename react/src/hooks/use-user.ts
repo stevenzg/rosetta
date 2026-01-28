@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { UserProfile, UserRole } from '@/lib/types/articles'
+import {
+  parseProfile,
+  type UserProfile,
+  type UserRole,
+} from '@/lib/types/articles'
 import type { User } from '@supabase/supabase-js'
 
 const supabase = createClient()
@@ -22,7 +26,8 @@ async function fetchProfile(userId: string): Promise<UserProfile | null> {
     .select('id, display_name, role')
     .eq('id', userId)
     .single()
-  return data as UserProfile | null
+  if (!data) return null
+  return parseProfile(data)
 }
 
 export function useUser(): UseUserReturn {

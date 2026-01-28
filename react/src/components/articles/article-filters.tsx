@@ -23,6 +23,9 @@ export function ArticleFilters({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
 
   useEffect(() => {
+    // Clear any pending debounce timer to prevent stale callbacks from firing
+    // after the search value is reset externally.
+    if (debounceRef.current) clearTimeout(debounceRef.current)
     setInputValue(currentSearch)
   }, [currentSearch])
 

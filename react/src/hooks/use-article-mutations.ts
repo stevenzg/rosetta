@@ -75,7 +75,7 @@ export function useArticleMutations(): UseArticleMutationsReturn {
 
       setState({ isSubmitting: false, error: null })
       return {
-        data: parseArticle(article as Record<string, unknown>),
+        data: parseArticle(article),
         error: null,
       }
     },
@@ -109,7 +109,7 @@ export function useArticleMutations(): UseArticleMutationsReturn {
 
       setState({ isSubmitting: false, error: null })
       return {
-        data: parseArticle(article as Record<string, unknown>),
+        data: parseArticle(article),
         error: null,
       }
     },

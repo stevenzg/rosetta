@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -28,11 +29,16 @@ export function ArticleDialog({
 }: ArticleDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
             {mode === 'create' ? 'Create Article' : 'Edit Article'}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {mode === 'create'
+              ? 'Fill out the form to create a new article.'
+              : 'Modify the fields below to update this article.'}
+          </DialogDescription>
         </DialogHeader>
         <ArticleForm
           key={article?.id ?? 'create'}
