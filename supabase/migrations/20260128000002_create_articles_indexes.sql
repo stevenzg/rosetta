@@ -1,0 +1,18 @@
+-- Migration: Create indexes for articles table
+-- Description: Adds performance indexes for common query patterns
+
+-- Index for filtering by author
+CREATE INDEX idx_articles_author_id ON public.articles(author_id);
+
+-- Index for default ordering by created date (descending for most recent first)
+CREATE INDEX idx_articles_created_at ON public.articles(created_at DESC);
+
+-- GIN index for full-text search on title
+-- NOTE: Uses 'english' language configuration for stemming and stop words.
+-- For multi-language support, consider using 'simple' configuration instead,
+-- or storing language per article and using a separate index per language.
+CREATE INDEX idx_articles_title_search ON public.articles USING gin(to_tsvector('english', title));
+
+-- Composite index for filtered pagination (status + created_at)
+-- Optimizes queries like: WHERE status = 'published' ORDER BY created_at DESC
+CREATE INDEX idx_articles_status_created ON public.articles(status, created_at DESC);
