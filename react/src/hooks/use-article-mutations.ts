@@ -74,8 +74,11 @@ export function useArticleMutations(): UseArticleMutationsReturn {
       }
 
       setState({ isSubmitting: false, error: null })
+      // Cast to `unknown` so narrowing happens inside parseArticle rather than
+      // relying on the Supabase SDK's structural type silently satisfying
+      // a Record parameter — see PR review discussion.
       return {
-        data: parseArticle(article),
+        data: parseArticle(article as unknown),
         error: null,
       }
     },
@@ -109,7 +112,7 @@ export function useArticleMutations(): UseArticleMutationsReturn {
 
       setState({ isSubmitting: false, error: null })
       return {
-        data: parseArticle(article),
+        data: parseArticle(article as unknown),
         error: null,
       }
     },

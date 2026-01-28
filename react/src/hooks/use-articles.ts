@@ -86,7 +86,10 @@ export function useArticles({
         if (controller.signal.aborted) return
         setError(fetchError.message)
       } else {
-        const fetched = (data ?? []).map(parseArticle)
+        // Explicitly widen each element to `unknown` so that parseArticle
+        // performs genuine runtime narrowing rather than silently accepting
+        // the Supabase SDK's structural type — see PR review discussion.
+        const fetched = (data ?? []).map((row) => parseArticle(row as unknown))
         setArticles((prev) => (reset ? fetched : [...prev, ...fetched]))
         setHasMore(fetched.length === PAGE_SIZE)
         setPage(pageNum)

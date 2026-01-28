@@ -24,7 +24,9 @@ export default async function ArticlesPage() {
     console.error('Failed to fetch initial articles:', error.message)
   }
 
-  const initialArticles: Article[] = (data ?? []).map(parseArticle)
+  const initialArticles: Article[] = (data ?? []).map((row) =>
+    parseArticle(row as unknown)
+  )
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
