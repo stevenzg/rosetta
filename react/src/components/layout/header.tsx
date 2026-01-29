@@ -2,11 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { LogIn, LogOut, User, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { useUser } from '@/hooks/use-user'
-import { AuthDialog } from '@/components/auth/auth-dialog'
+
+const AuthDialog = dynamic(
+  () => import('@/components/auth/auth-dialog').then((m) => m.AuthDialog),
+  { ssr: false }
+)
 
 type AuthMode = 'login' | 'register'
 

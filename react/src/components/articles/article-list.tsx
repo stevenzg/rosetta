@@ -3,14 +3,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import type { InfiniteData } from '@tanstack/react-query'
+import dynamic from 'next/dynamic'
 import { Plus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ArticleCard } from '@/components/articles/article-card'
-import { ArticleDialog } from '@/components/articles/article-dialog'
-import { ArticleDeleteDialog } from '@/components/articles/article-delete-dialog'
 import { ArticleFilters } from '@/components/articles/article-filters'
 import { ArticleListSkeleton } from '@/components/articles/article-list-skeleton'
+
+const ArticleDialog = dynamic(
+  () =>
+    import('@/components/articles/article-dialog').then((m) => m.ArticleDialog),
+  { ssr: false }
+)
+
+const ArticleDeleteDialog = dynamic(
+  () =>
+    import('@/components/articles/article-delete-dialog').then(
+      (m) => m.ArticleDeleteDialog
+    ),
+  { ssr: false }
+)
 import { useArticles } from '@/hooks/use-articles'
 import { useArticleMutations } from '@/hooks/use-article-mutations'
 import { useUser } from '@/hooks/use-user'
@@ -62,6 +75,7 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
     estimateSize: () => ITEM_HEIGHT,
     overscan: 5,
     scrollMargin: listRef.current?.offsetTop ?? 0,
+    initialRect: { width: 412, height: 823 },
   })
 
   // Fetch next page when scrolling near the end
