@@ -15,6 +15,7 @@ import { useArticles } from '@/hooks/use-articles'
 import { useArticleMutations } from '@/hooks/use-article-mutations'
 import { useUser } from '@/hooks/use-user'
 import { queryClient } from '@/lib/query-client'
+import { PAGE_SIZE } from '@/lib/constants'
 import type { Article, ArticleFormData } from '@/lib/types/articles'
 
 type Cursor = { createdAt: string; id: string } | null
@@ -69,7 +70,7 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
     const lastItem = virtualItems[virtualItems.length - 1]
     if (
       lastItem &&
-      lastItem.index >= articles.length - 3 &&
+      lastItem.index >= articles.length - PAGE_SIZE &&
       hasNextPage &&
       !isLoading &&
       !isFetchingNextPage
