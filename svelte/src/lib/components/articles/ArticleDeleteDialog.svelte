@@ -12,9 +12,18 @@
 
 	let { open, article, error = null, onClose, onConfirm }: Props = $props()
 	let deleting = $state(false)
+	let triggerElement: Element | null = $state(null)
 
 	$effect(() => {
-		if (open) deleting = false
+		if (open) {
+			triggerElement = document.activeElement
+			deleting = false
+		} else if (triggerElement) {
+			if (triggerElement instanceof HTMLElement) {
+				triggerElement.focus()
+			}
+			triggerElement = null
+		}
 	})
 
 	async function handleConfirm() {

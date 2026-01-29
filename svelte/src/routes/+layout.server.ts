@@ -1,5 +1,6 @@
 import type { LayoutServerLoad } from './$types';
 import type { UserProfile } from '$lib/types';
+import { validateProfile } from '$lib/services/profiles';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
 	const { session, supabase } = locals;
@@ -13,7 +14,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 			.single();
 
 		if (data) {
-			profile = data as unknown as UserProfile;
+			profile = validateProfile(data);
 		}
 	}
 

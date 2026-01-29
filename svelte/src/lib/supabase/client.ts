@@ -13,6 +13,3 @@ export function getClient() {
 	}
 	return client;
 }
-
-/** @deprecated Use `getClient()` instead */
-export const createClient = getClient;

@@ -92,11 +92,13 @@
 
 	function openCreateDialog() {
 		editingArticle = null
+		formError = null
 		formDialogOpen = true
 	}
 
 	function openEditDialog(article: Article) {
 		editingArticle = article
+		formError = null
 		formDialogOpen = true
 	}
 
@@ -127,10 +129,11 @@
 	async function handleDeleteConfirm() {
 		if (!deletingArticle) return
 
+		const id = deletingArticle.id
 		deleteError = null
 		try {
-			await deleteArticle(supabase, deletingArticle.id)
-			articles = articles.filter((a) => a.id !== deletingArticle!.id)
+			await deleteArticle(supabase, id)
+			articles = articles.filter((a) => a.id !== id)
 			totalCount -= 1
 			deleteDialogOpen = false
 			deletingArticle = null

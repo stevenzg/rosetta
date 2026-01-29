@@ -85,8 +85,9 @@ export async function fetchArticles(
 	}
 
 	if (search) {
-		const escaped = search.replace(/%/g, '\\%').replace(/_/g, '\\_');
-		query = query.ilike('title', `%${escaped}%`);
+		// Use full-text search to leverage the GIN index (idx_articles_title_search)
+		// on to_tsvector('english', title). ilike would cause a sequential scan.
+		query = query.textSearch('title', search, { type: 'websearch' });
 	}
 
 	const { data, error, count } = await query;

@@ -5,6 +5,8 @@ import globals from 'globals';
 
 export default [
   {
+    // svelte/** is ignored because the Svelte project has its own ESLint config
+    // (svelte/eslint.config.js) with svelte-specific plugins and parser settings.
     ignores: ['dist/**', 'node_modules/**', 'react/.next', 'svelte/**'],
   },
   js.configs.recommended,

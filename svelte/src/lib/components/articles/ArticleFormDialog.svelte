@@ -17,21 +17,32 @@
 	let status = $state<ArticleStatus>('draft')
 	let validationErrors = $state<{ title?: string; status?: string }>({})
 	let submitting = $state(false)
+	let triggerElement: Element | null = $state(null)
 
 	const isEdit = $derived(!!article)
 	const dialogTitle = $derived(isEdit ? 'Edit Article' : 'Create Article')
 
 	$effect(() => {
-		if (open && article) {
-			title = article.title
-			content = article.content ?? ''
-			status = article.status
-		} else if (open) {
-			title = ''
-			content = ''
-			status = 'draft'
+		if (open) {
+			// Capture the element that had focus before the dialog opened
+			triggerElement = document.activeElement
+			if (article) {
+				title = article.title
+				content = article.content ?? ''
+				status = article.status
+			} else {
+				title = ''
+				content = ''
+				status = 'draft'
+			}
+			validationErrors = {}
+		} else if (triggerElement) {
+			// Restore focus to the trigger element when the dialog closes
+			if (triggerElement instanceof HTMLElement) {
+				triggerElement.focus()
+			}
+			triggerElement = null
 		}
-		validationErrors = {}
 	})
 
 	function validate(): boolean {
