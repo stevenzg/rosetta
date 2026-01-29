@@ -5,14 +5,14 @@
 	import ArticleDeleteDialog from '$lib/components/articles/ArticleDeleteDialog.svelte'
 	import SearchInput from '$lib/components/search/SearchInput.svelte'
 	import StatusFilter from '$lib/components/search/StatusFilter.svelte'
-	import { createClient } from '$lib/supabase/client'
+	import { getClient } from '$lib/supabase/client'
 	import { fetchArticles, createArticle, updateArticle, deleteArticle } from '$lib/services/articles'
 	import { PAGE_SIZE } from '$lib/constants'
 	import type { Article, ArticleCreate, StatusFilter as StatusFilterType } from '$lib/types'
 
 	let { data } = $props()
 
-	const supabase = createClient()
+	const supabase = getClient()
 	const profile = $derived(data.profile)
 	const userRole = $derived(profile?.role ?? 'viewer')
 	const isEditor = $derived(userRole === 'editor')

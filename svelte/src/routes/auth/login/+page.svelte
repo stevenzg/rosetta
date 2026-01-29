@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createClient } from '$lib/supabase/client'
+	import { getClient } from '$lib/supabase/client'
 	import { goto, invalidateAll } from '$app/navigation'
 
 	let email = $state('')
@@ -12,7 +12,7 @@
 		error = null
 		loading = true
 
-		const supabase = createClient()
+		const supabase = getClient()
 		const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
 		if (authError) {

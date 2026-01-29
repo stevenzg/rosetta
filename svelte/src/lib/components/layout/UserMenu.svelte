@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { LogOut, User } from 'lucide-svelte'
-	import { createClient } from '$lib/supabase/client'
+	import { getClient } from '$lib/supabase/client'
 	import { goto, invalidateAll } from '$app/navigation'
 	import type { UserProfile } from '$lib/types'
 	import type { Session } from '@supabase/supabase-js'
@@ -14,7 +14,7 @@
 	let menuOpen = $state(false)
 
 	async function handleSignOut() {
-		const supabase = createClient()
+		const supabase = getClient()
 		await supabase.auth.signOut()
 		menuOpen = false
 		await invalidateAll()
