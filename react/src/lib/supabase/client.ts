@@ -3,12 +3,12 @@
 import { createBrowserClient } from '@supabase/ssr'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+const supabasePublicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY ?? ''
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabasePublicKey) {
   const missing = [
     !supabaseUrl && 'NEXT_PUBLIC_SUPABASE_URL',
-    !supabaseAnonKey && 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    !supabasePublicKey && 'NEXT_PUBLIC_SUPABASE_PUBLIC_KEY',
   ].filter(Boolean)
   // eslint-disable-next-line no-console
   console.error(
@@ -19,5 +19,5 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export function createClient() {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey)
+  return createBrowserClient(supabaseUrl, supabasePublicKey)
 }

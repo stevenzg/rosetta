@@ -37,7 +37,7 @@ Article management platform built with Next.js 16, Tailwind CSS v4, shadcn/ui, a
 
    ```
    NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+   NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=<your-supabase-public-key>
    ```
 
 4. Run database migrations (from project root):
