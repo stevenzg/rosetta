@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { Plus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -47,25 +48,39 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingArticle, setDeletingArticle] = useState<Article | null>(null)
 
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const createBtnRef = useRef<HTMLButtonElement>(null)
+  const [createBtn, setCreateBtn] = useState<HTMLButtonElement | null>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
-  // Infinite scroll observer
+  const ITEM_HEIGHT = 85 // ~73px card + 12px gap
+
+  const virtualizer = useWindowVirtualizer({
+    count: articles.length,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 5,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
+  })
+
+  // Fetch next page when scrolling near the end
   useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel || !hasMore) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isLoading && !isLoadingMore) {
-          fetchNextPage()
-        }
-      },
-      { rootMargin: '200px' }
-    )
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [hasMore, isLoading, isLoadingMore, fetchNextPage])
+    const virtualItems = virtualizer.getVirtualItems()
+    const lastItem = virtualItems[virtualItems.length - 1]
+    if (
+      lastItem &&
+      lastItem.index >= articles.length - 3 &&
+      hasMore &&
+      !isLoading &&
+      !isLoadingMore
+    ) {
+      fetchNextPage()
+    }
+  }, [
+    virtualizer.getVirtualItems(),
+    articles.length,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    fetchNextPage,
+  ])
 
   const handleCreate = useCallback(() => {
     setDialogMode('create')
@@ -121,26 +136,26 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
       setDeleteDialogOpen(false)
       setDeletingArticle(null)
       toast.success('Article deleted successfully')
-      createBtnRef.current?.focus()
+      createBtn?.focus()
     } else {
       toast.error(result.error ?? 'Failed to delete article')
     }
   }, [deletingArticle, deleteArticle, setArticles])
 
-  if (isUserLoading) {
-    return <ArticleListSkeleton count={5} />
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Articles</h1>
-        {isEditor && (
-          <Button ref={createBtnRef} onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Create Article
-          </Button>
-        )}
+        <Button
+          size="sm"
+          ref={setCreateBtn}
+          onClick={handleCreate}
+          className={isUserLoading || !isEditor ? 'invisible' : ''}
+          tabIndex={isUserLoading || !isEditor ? -1 : 0}
+        >
+          <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
+          Add
+        </Button>
       </div>
 
       <ArticleFilters
@@ -167,28 +182,42 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
 
       {isLoading ? (
         <ArticleListSkeleton count={5} />
+      ) : articles.length === 0 && !error ? (
+        <p className="py-12 text-center text-muted-foreground">
+          No articles found.
+        </p>
       ) : (
-        <div aria-busy={isLoadingMore} aria-live="polite" className="space-y-3">
-          {articles.length === 0 && !error ? (
-            <p className="py-12 text-center text-muted-foreground">
-              No articles found.
-            </p>
-          ) : (
-            articles.map((article) => (
-              <ArticleCard
-                key={article.id}
-                article={article}
-                isEditor={isEditor}
-                onEdit={handleEdit}
-                onDelete={handleDeleteClick}
-              />
-            ))
-          )}
+        <div ref={listRef} aria-busy={isLoadingMore} aria-live="polite">
+          <div
+            className="relative w-full"
+            style={{ height: virtualizer.getTotalSize() }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const article = articles[virtualRow.index]
+              return (
+                <div
+                  key={article.id}
+                  className="absolute left-0 top-0 w-full"
+                  style={{
+                    height: virtualRow.size,
+                    transform: `translateY(${virtualRow.start - virtualizer.options.scrollMargin}px)`,
+                  }}
+                >
+                  <ArticleCard
+                    article={article}
+                    isEditor={isEditor}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
+                  />
+                </div>
+              )
+            })}
+          </div>
 
-          {isLoadingMore && <ArticleListSkeleton count={3} />}
-
-          {hasMore && !isLoadingMore && !error && (
-            <div ref={sentinelRef} aria-hidden="true" className="h-4" />
+          {isLoadingMore && (
+            <div className="py-2">
+              <ArticleListSkeleton count={3} />
+            </div>
           )}
 
           {!hasMore && articles.length > 0 && (
