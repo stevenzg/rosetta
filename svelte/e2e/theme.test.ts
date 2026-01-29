@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { login, TEST_EDITOR } from './helpers';
 
 test.describe('Theme toggle', () => {
 	test('toggles between light and dark theme and persists on reload', async ({ page }) => {
-		await login(page, TEST_EDITOR);
+		await page.goto('http://localhost:4173/');
+		await expect(page.getByRole('heading', { name: 'Articles' })).toBeVisible({ timeout: 10_000 });
 
 		// Check initial theme state
 		const html = page.locator('html');

@@ -64,7 +64,7 @@ describe('ArticleFormDialog', () => {
 		await expect.element(page.getByRole('button', { name: 'Save changes' })).toBeInTheDocument();
 	});
 
-	it('shows validation error for empty title on submit', async () => {
+	it('disables submit button when title is empty', async () => {
 		expect.assertions(1);
 		render(ArticleFormDialog, {
 			props: {
@@ -75,10 +75,7 @@ describe('ArticleFormDialog', () => {
 			}
 		});
 
-		// Submit without filling in title
-		await page.getByRole('button', { name: 'Create article' }).click();
-
-		await expect.element(page.getByText('Title is required')).toBeInTheDocument();
+		await expect.element(page.getByRole('button', { name: 'Create article' })).toBeDisabled();
 	});
 
 	it('shows server error when provided', async () => {
