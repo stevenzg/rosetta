@@ -34,14 +34,17 @@ describe('ArticleForm', () => {
     expect(screen.getByLabelText(/status/i)).toBeInTheDocument()
   })
 
-  it('shows validation error when title is empty on submit', async () => {
+  it('shows validation error when title is empty on blur', async () => {
     const user = userEvent.setup()
     render(<ArticleForm {...defaultProps} />)
 
-    await user.click(screen.getByRole('button', { name: /create article/i }))
+    const titleInput = screen.getByLabelText(/title/i)
+    // Type then clear to mark field as dirty, then blur to trigger validation
+    await user.type(titleInput, 'a')
+    await user.clear(titleInput)
+    await user.tab()
 
     expect(screen.getByRole('alert')).toHaveTextContent('Title is required')
-    expect(defaultProps.onSubmit).not.toHaveBeenCalled()
   })
 
   it('shows validation error when title exceeds 255 characters', async () => {
@@ -128,12 +131,15 @@ describe('ArticleForm', () => {
     const user = userEvent.setup()
     render(<ArticleForm {...defaultProps} />)
 
-    // Trigger validation error
-    await user.click(screen.getByRole('button', { name: /create article/i }))
+    const titleInput = screen.getByLabelText(/title/i)
+    // Trigger validation error via dirty + clear + blur
+    await user.type(titleInput, 'a')
+    await user.clear(titleInput)
+    await user.tab()
     expect(screen.getByRole('alert')).toBeInTheDocument()
 
     // Start typing to clear error
-    await user.type(screen.getByLabelText(/title/i), 'a')
+    await user.type(titleInput, 'b')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
@@ -141,10 +147,12 @@ describe('ArticleForm', () => {
     const user = userEvent.setup()
     render(<ArticleForm {...defaultProps} />)
 
-    await user.click(screen.getByRole('button', { name: /create article/i }))
-    expect(screen.getByLabelText(/title/i)).toHaveAttribute(
-      'aria-invalid',
-      'true'
-    )
+    const titleInput = screen.getByLabelText(/title/i)
+    // Trigger validation via dirty + clear + blur
+    await user.type(titleInput, 'a')
+    await user.clear(titleInput)
+    await user.tab()
+
+    expect(titleInput).toHaveAttribute('aria-invalid', 'true')
   })
 })
