@@ -63,13 +63,22 @@
 		}
 	}
 
+	const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+
+	function validateBase(trimmedEmail: string): string | null {
+		if (!trimmedEmail || !password) return 'Please enter both email and password.'
+		if (!isValidEmail(trimmedEmail)) return 'Please enter a valid email address.'
+		return null
+	}
+
 	async function handleLogin(e: SubmitEvent) {
 		e.preventDefault()
 		error = null
 
 		const trimmedEmail = email.trim()
-		if (!trimmedEmail || !password) {
-			error = 'Please enter both email and password.'
+		const validationError = validateBase(trimmedEmail)
+		if (validationError) {
+			error = validationError
 			return
 		}
 
@@ -98,6 +107,11 @@
 		const trimmedEmail = email.trim()
 		if (!trimmedEmail || !password || !confirmPassword) {
 			error = 'Please fill in all fields.'
+			return
+		}
+
+		if (!isValidEmail(trimmedEmail)) {
+			error = 'Please enter a valid email address.'
 			return
 		}
 

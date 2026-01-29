@@ -73,13 +73,25 @@ export function AuthDialog({
     onOpenChange(nextOpen)
   }
 
+  const isValidEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+
+  const validateBase = (trimmedEmail: string): string | null => {
+    if (!trimmedEmail || !password)
+      return 'Please enter both email and password.'
+    if (!isValidEmail(trimmedEmail))
+      return 'Please enter a valid email address.'
+    return null
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
     const trimmedEmail = email.trim()
-    if (!trimmedEmail || !password) {
-      setError('Please enter both email and password.')
+    const validationError = validateBase(trimmedEmail)
+    if (validationError) {
+      setError(validationError)
       return
     }
 
@@ -108,6 +120,11 @@ export function AuthDialog({
     const trimmedEmail = email.trim()
     if (!trimmedEmail || !password || !confirmPassword) {
       setError('Please fill in all fields.')
+      return
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError('Please enter a valid email address.')
       return
     }
 
