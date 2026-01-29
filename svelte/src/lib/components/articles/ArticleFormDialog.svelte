@@ -90,16 +90,23 @@
 		<div
 			class="relative z-10 w-full max-w-lg rounded-lg border border-border bg-background p-6 shadow-xl"
 		>
-			<div class="mb-4 flex items-center justify-between">
-				<h2 id="dialog-title" class="text-lg font-semibold text-foreground">{dialogTitle}</h2>
-				<button
-					type="button"
-					onclick={onClose}
-					class="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-					aria-label="Close dialog"
-				>
-					<X class="h-4 w-4" />
-				</button>
+			<div class="mb-4 flex flex-col gap-2">
+				<div class="flex items-center justify-between">
+					<h2 id="dialog-title" class="text-lg font-semibold leading-none">{dialogTitle}</h2>
+					<button
+						type="button"
+						onclick={onClose}
+						class="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+						aria-label="Close dialog"
+					>
+						<X class="h-4 w-4" />
+					</button>
+				</div>
+				<p class="sr-only">
+					{isEdit
+						? 'Modify the fields below to update this article.'
+						: 'Fill out the form to create a new article.'}
+				</p>
 			</div>
 
 			{#if error}
@@ -108,10 +115,10 @@
 				</div>
 			{/if}
 
-			<form onsubmit={handleSubmit} class="space-y-4">
-				<div>
-					<label for="article-title" class="mb-1 block text-sm font-medium text-foreground">
-						Title <span class="text-destructive">*</span>
+			<form onsubmit={handleSubmit} class="space-y-4" novalidate>
+				<div class="space-y-2">
+					<label for="article-title" class="text-sm font-medium leading-none">
+						Title <span aria-hidden="true">*</span>
 					</label>
 					<input
 						id="article-title"
@@ -120,36 +127,35 @@
 						maxlength="255"
 						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 						class:border-destructive={!!validationErrors.title}
-						placeholder="Article title"
+						placeholder="Enter article title"
+						aria-required="true"
 						aria-invalid={!!validationErrors.title}
 						aria-describedby={validationErrors.title ? 'title-error' : undefined}
 					/>
 					{#if validationErrors.title}
-						<p id="title-error" class="mt-1 text-sm text-destructive">{validationErrors.title}</p>
+						<p id="title-error" class="text-sm text-destructive" role="alert">
+							{validationErrors.title}
+						</p>
 					{/if}
 				</div>
 
-				<div>
-					<label for="article-content" class="mb-1 block text-sm font-medium text-foreground">
-						Content
-					</label>
+				<div class="space-y-2">
+					<label for="article-content" class="text-sm font-medium leading-none"> Content </label>
 					<textarea
 						id="article-content"
 						bind:value={content}
 						rows="6"
 						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
-						placeholder="Article content"
+						placeholder="Enter article content"
 					></textarea>
 				</div>
 
-				<div>
-					<label for="article-status" class="mb-1 block text-sm font-medium text-foreground">
-						Status
-					</label>
+				<div class="space-y-2">
+					<label for="article-status" class="text-sm font-medium leading-none"> Status </label>
 					<select
 						id="article-status"
 						bind:value={status}
-						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none sm:w-[180px]"
 						aria-invalid={!!validationErrors.status}
 						aria-describedby={validationErrors.status ? 'status-error' : undefined}
 					>
@@ -157,7 +163,9 @@
 						<option value="published">Published</option>
 					</select>
 					{#if validationErrors.status}
-						<p id="status-error" class="mt-1 text-sm text-destructive">{validationErrors.status}</p>
+						<p id="status-error" class="text-sm text-destructive" role="alert">
+							{validationErrors.status}
+						</p>
 					{/if}
 				</div>
 
@@ -165,16 +173,20 @@
 					<button
 						type="button"
 						onclick={onClose}
-						class="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-accent"
+						class="rounded-md border bg-background px-4 py-2 text-sm shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
 					>
 						Cancel
 					</button>
 					<button
 						type="submit"
-						disabled={submitting}
-						class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+						disabled={submitting || !title.trim() || title.trim().length > 255}
+						class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
 					>
-						{submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Create article'}
+						{#if submitting}
+							{isEdit ? 'Saving...' : 'Creating...'}
+						{:else}
+							{isEdit ? 'Save Changes' : 'Create Article'}
+						{/if}
 					</button>
 				</div>
 			</form>

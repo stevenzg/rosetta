@@ -7,7 +7,6 @@
 	import StatusFilter from '$lib/components/search/StatusFilter.svelte'
 	import { getClient } from '$lib/supabase/client'
 	import { fetchArticles, createArticle, updateArticle, deleteArticle } from '$lib/services/articles'
-	import { PAGE_SIZE } from '$lib/constants'
 	import type { Article, ArticleCreate, StatusFilter as StatusFilterType } from '$lib/types'
 
 	let { data } = $props()
@@ -143,23 +142,22 @@
 	}
 </script>
 
-<div>
-	<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-		<h1 class="text-2xl font-bold text-foreground">Articles</h1>
-		{#if isEditor}
-			<button
-				type="button"
-				onclick={openCreateDialog}
-				class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-			>
-				<Plus class="h-4 w-4" />
-				Create Article
-			</button>
-		{/if}
+<div class="space-y-6">
+	<div class="flex items-center justify-between">
+		<h1 class="text-2xl font-bold tracking-tight">Articles</h1>
+		<button
+			type="button"
+			onclick={openCreateDialog}
+			class="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 {isEditor ? '' : 'invisible'}"
+			tabindex={isEditor ? 0 : -1}
+		>
+			<Plus class="mr-1 h-4 w-4" aria-hidden="true" />
+			Add
+		</button>
 	</div>
 
-	<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-		<div class="flex-1">
+	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+		<div class="relative w-full sm:max-w-xs">
 			<SearchInput value={searchQuery} onSearch={handleSearch} />
 		</div>
 		<StatusFilter value={statusFilter} onChange={handleFilterChange} />

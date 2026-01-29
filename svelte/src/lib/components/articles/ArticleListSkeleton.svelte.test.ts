@@ -4,39 +4,34 @@ import { page } from '@vitest/browser/context';
 import ArticleListSkeleton from './ArticleListSkeleton.svelte';
 
 describe('ArticleListSkeleton', () => {
-	it('renders with aria-busy and aria-label attributes', async () => {
+	it('renders with role="status" and aria-label attributes', async () => {
 		expect.assertions(1);
 		const screen = render(ArticleListSkeleton);
 
-		// The container div has aria-busy="true" and aria-label="Loading articles"
-		const el = screen.container.querySelector('[aria-busy="true"][aria-label="Loading articles"]');
+		const el = screen.container.querySelector('[role="status"][aria-label="Loading articles"]');
 		expect(el).not.toBeNull();
 	});
 
-	it('renders default 5 skeleton rows', async () => {
+	it('renders default 5 skeleton cards', async () => {
 		expect.assertions(1);
 		const screen = render(ArticleListSkeleton);
 
-		const rows = screen.container.querySelectorAll('tbody tr');
-		expect(rows.length).toBe(5);
+		const cards = screen.container.querySelectorAll('.rounded-lg.border');
+		expect(cards.length).toBe(5);
 	});
 
-	it('renders custom number of skeleton rows', async () => {
+	it('renders custom number of skeleton cards', async () => {
 		expect.assertions(1);
-		const screen = render(ArticleListSkeleton, { props: { rows: 3 } });
+		const screen = render(ArticleListSkeleton, { props: { count: 3 } });
 
-		const rows = screen.container.querySelectorAll('tbody tr');
-		expect(rows.length).toBe(3);
+		const cards = screen.container.querySelectorAll('.rounded-lg.border');
+		expect(cards.length).toBe(3);
 	});
 
-	it('renders table headers', async () => {
-		expect.assertions(5);
+	it('renders sr-only loading text', async () => {
+		expect.assertions(1);
 		render(ArticleListSkeleton);
 
-		await expect.element(page.getByRole('columnheader', { name: 'ID' })).toBeInTheDocument();
-		await expect.element(page.getByRole('columnheader', { name: 'Title' })).toBeInTheDocument();
-		await expect.element(page.getByRole('columnheader', { name: 'Status' })).toBeInTheDocument();
-		await expect.element(page.getByRole('columnheader', { name: 'Author' })).toBeInTheDocument();
-		await expect.element(page.getByRole('columnheader', { name: 'Created' })).toBeInTheDocument();
+		await expect.element(page.getByText('Loading articles, please wait...')).toBeInTheDocument();
 	});
 });

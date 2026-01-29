@@ -1,48 +1,28 @@
 <script lang="ts">
 	interface Props {
-		rows?: number
+		count?: number
 	}
 
-	let { rows = 5 }: Props = $props()
+	let { count = 5 }: Props = $props()
 </script>
 
-<div aria-busy="true" aria-label="Loading articles">
-	<table class="w-full text-sm">
-		<thead>
-			<tr class="border-b border-border text-left">
-				<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">ID</th>
-				<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">Title</th>
-				<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">Status</th>
-				<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">Author</th>
-				<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">Created</th>
-				<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">
-					<span class="sr-only">Actions</span>
-				</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each Array(rows) as _, i (i)}
-				<tr class="border-b border-border">
-					<td class="px-3 py-3">
-						<div class="h-4 w-16 animate-pulse rounded bg-muted"></div>
-					</td>
-					<td class="px-3 py-3">
-						<div class="h-4 w-48 animate-pulse rounded bg-muted"></div>
-					</td>
-					<td class="px-3 py-3">
-						<div class="h-5 w-16 animate-pulse rounded-full bg-muted"></div>
-					</td>
-					<td class="px-3 py-3">
-						<div class="h-4 w-24 animate-pulse rounded bg-muted"></div>
-					</td>
-					<td class="px-3 py-3">
-						<div class="h-4 w-20 animate-pulse rounded bg-muted"></div>
-					</td>
-					<td class="px-3 py-3">
-						<div class="h-4 w-16 animate-pulse rounded bg-muted"></div>
-					</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+<div role="status" aria-label="Loading articles" class="space-y-3">
+	<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+	{#each Array(count) as _, i (i)}
+		<div class="flex items-center justify-between gap-4 rounded-lg border p-4">
+			<div class="min-w-0 flex-1 space-y-2">
+				<div class="h-5 w-3/4 animate-pulse rounded-md bg-accent"></div>
+				<div class="flex flex-wrap gap-x-4 gap-y-1">
+					<div class="h-4 w-20 animate-pulse rounded-md bg-accent"></div>
+					<div class="h-4 w-24 animate-pulse rounded-md bg-accent"></div>
+					<div class="h-4 w-32 animate-pulse rounded-md bg-accent"></div>
+				</div>
+			</div>
+			<div class="flex shrink-0 gap-1">
+				<div class="h-8 w-8 animate-pulse rounded-md bg-accent"></div>
+				<div class="h-8 w-8 animate-pulse rounded-md bg-accent"></div>
+			</div>
+		</div>
+	{/each}
+	<span class="sr-only">Loading articles, please wait...</span>
 </div>

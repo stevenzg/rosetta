@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { AlertTriangle } from 'lucide-svelte'
+	import { X } from 'lucide-svelte'
 	import type { Article } from '$lib/types'
 
 	interface Props {
@@ -53,32 +53,39 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="fixed inset-0" onclick={onClose} onkeydown={handleKeydown}></div>
 		<div
-			class="relative z-10 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-xl"
+			class="relative z-10 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg"
 		>
-			<div class="mb-4 flex items-start gap-3">
-				<AlertTriangle class="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
-				<div>
-					<h2 id="delete-dialog-title" class="text-lg font-semibold text-foreground">
+			<div class="flex flex-col gap-2">
+				<div class="flex items-center justify-between">
+					<h2 id="delete-dialog-title" class="text-lg font-semibold leading-none">
 						Delete Article
 					</h2>
-					<p id="delete-dialog-desc" class="mt-1 text-sm text-muted-foreground">
-						Are you sure you want to delete "<strong>{article.title}</strong>"? This action cannot
-						be undone.
-					</p>
+					<button
+						type="button"
+						onclick={onClose}
+						class="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+						aria-label="Close dialog"
+					>
+						<X class="h-4 w-4" />
+					</button>
 				</div>
+				<p id="delete-dialog-desc" class="text-sm text-muted-foreground">
+					Are you sure you want to delete &quot;{article.title}&quot;? This action cannot be undone.
+				</p>
 			</div>
 
 			{#if error}
-				<div class="mb-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+				<div class="mt-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
 					{error}
 				</div>
 			{/if}
 
-			<div class="flex justify-end gap-2">
+			<div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 				<button
 					type="button"
 					onclick={onClose}
-					class="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-accent"
+					disabled={deleting}
+					class="rounded-md border bg-background px-4 py-2 text-sm shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
 				>
 					Cancel
 				</button>
@@ -86,7 +93,7 @@
 					type="button"
 					onclick={handleConfirm}
 					disabled={deleting}
-					class="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
+					class="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-destructive/90 disabled:pointer-events-none disabled:opacity-50"
 				>
 					{deleting ? 'Deleting...' : 'Delete'}
 				</button>

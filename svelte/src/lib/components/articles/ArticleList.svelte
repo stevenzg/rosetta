@@ -1,9 +1,7 @@
 <script lang="ts">
-	import ArticleRow from './ArticleRow.svelte'
+	import ArticleCard from './ArticleCard.svelte'
 	import ArticleListSkeleton from './ArticleListSkeleton.svelte'
-	import ArticleEmptyState from './ArticleEmptyState.svelte'
 	import InfiniteScroll from '$lib/components/common/InfiniteScroll.svelte'
-	import ErrorMessage from '$lib/components/common/ErrorMessage.svelte'
 	import type { Article, UserRole } from '$lib/types'
 
 	interface Props {
@@ -33,39 +31,44 @@
 	}: Props = $props()
 </script>
 
+{#if error && !loading}
+	<div
+		class="flex flex-col items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center"
+		role="alert"
+	>
+		<p class="text-sm text-destructive">Something went wrong: {error}</p>
+		<button
+			type="button"
+			onclick={onRetry}
+			class="inline-flex items-center rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent"
+		>
+			Retry
+		</button>
+	</div>
+{/if}
+
 {#if loading}
-	<ArticleListSkeleton />
-{:else if error}
-	<ErrorMessage message={error} onRetry={onRetry} />
-{:else if articles.length === 0}
-	<ArticleEmptyState />
+	<ArticleListSkeleton count={5} />
+{:else if articles.length === 0 && !error}
+	<p class="py-12 text-center text-muted-foreground">No articles found.</p>
 {:else}
-	<div aria-busy={loadingMore}>
-		<table class="w-full text-sm" aria-label="Articles">
-			<caption class="sr-only">List of articles</caption>
-			<thead>
-				<tr class="border-b border-border text-left">
-					<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">ID</th>
-					<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">Title</th>
-					<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">Status</th>
-					<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">Author</th>
-					<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">Created</th>
-					<th scope="col" class="px-3 py-3 font-medium text-muted-foreground">
-						<span class="sr-only">Actions</span>
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each articles as article (article.id)}
-					<ArticleRow {article} {userRole} {onEdit} {onDelete} />
-				{/each}
-			</tbody>
-		</table>
+	<div aria-busy={loadingMore} aria-live="polite">
+		<div class="space-y-3">
+			{#each articles as article (article.id)}
+				<ArticleCard {article} {userRole} {onEdit} {onDelete} />
+			{/each}
+		</div>
+
+		{#if loadingMore}
+			<div class="py-2">
+				<ArticleListSkeleton count={3} />
+			</div>
+		{/if}
 
 		<InfiniteScroll {hasMore} loading={loadingMore} {onLoadMore} />
-	</div>
 
-	<div class="sr-only" aria-live="polite">
-		{articles.length} articles loaded
+		{#if !hasMore && articles.length > 0}
+			<p class="py-4 text-center text-sm text-muted-foreground">All articles loaded.</p>
+		{/if}
 	</div>
 {/if}

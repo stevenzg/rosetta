@@ -12,21 +12,18 @@
 	let { session, profile }: Props = $props()
 </script>
 
-<header class="border-b border-border bg-background">
-	<div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-		<a href="/" class="text-lg font-semibold text-foreground"> Rosetta </a>
+<header
+	class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+>
+	<nav
+		class="mx-auto flex h-14 max-w-5xl items-center justify-between px-4"
+		aria-label="Main navigation"
+	>
+		<a href="/" class="text-lg font-semibold tracking-tight"> Rosetta </a>
 
-		<nav class="flex items-center gap-3" aria-label="Main navigation">
-			{#if session}
-				<a
-					href="/articles"
-					class="text-sm text-muted-foreground transition-colors hover:text-foreground"
-				>
-					Articles
-				</a>
-			{/if}
+		<div class="flex items-center gap-2">
 			<ThemeToggle />
 			<UserMenu {session} {profile} />
-		</nav>
-	</div>
+		</div>
+	</nav>
 </header>

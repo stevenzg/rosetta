@@ -8,23 +8,25 @@
 	}
 
 	let { value, onChange }: Props = $props()
-
-	function handleChange(e: Event) {
-		const target = e.target as HTMLSelectElement
-		onChange(target.value as StatusFilterType)
-	}
 </script>
 
-<div class="flex items-center gap-2">
-	<label for="status-filter" class="text-sm font-medium text-muted-foreground">Status:</label>
-	<select
-		id="status-filter"
-		{value}
-		onchange={handleChange}
-		class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
-	>
-		{#each STATUS_OPTIONS as option (option.value)}
-			<option value={option.value}>{option.label}</option>
-		{/each}
-	</select>
+<div
+	role="radiogroup"
+	aria-label="Filter articles by status"
+	class="flex h-9 items-center gap-0.5 rounded-lg bg-muted p-[3px] sm:inline-flex"
+>
+	{#each STATUS_OPTIONS as option (option.value)}
+		<button
+			type="button"
+			role="radio"
+			aria-checked={value === option.value}
+			onclick={() => onChange(option.value as StatusFilterType)}
+			class="h-full flex-1 rounded-md px-3 text-sm font-medium sm:flex-initial {value ===
+			option.value
+				? 'bg-background text-foreground shadow-sm'
+				: 'text-foreground/70 hover:text-foreground'}"
+		>
+			{option.label}
+		</button>
+	{/each}
 </div>

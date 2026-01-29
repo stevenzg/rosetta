@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from '@vitest/browser/context';
-import ArticleRow from './ArticleRow.svelte';
+import ArticleCard from './ArticleCard.svelte';
 import type { Article } from '$lib/types';
 
 function makeMockArticle(overrides: Partial<Article> = {}): Article {
@@ -19,11 +19,11 @@ function makeMockArticle(overrides: Partial<Article> = {}): Article {
 	};
 }
 
-describe('ArticleRow', () => {
-	it('renders article data in cells', async () => {
-		expect.assertions(5);
+describe('ArticleCard', () => {
+	it('renders article data', async () => {
+		expect.assertions(4);
 		const article = makeMockArticle();
-		const screen = render(ArticleRow, {
+		render(ArticleCard, {
 			props: {
 				article,
 				userRole: 'viewer',
@@ -32,14 +32,12 @@ describe('ArticleRow', () => {
 			}
 		});
 
-		// Truncated ID (first 8 chars)
-		await expect.element(page.getByText('abcdef12')).toBeInTheDocument();
 		// Title
 		await expect.element(page.getByText('Test Article Title')).toBeInTheDocument();
-		// Status badge
+		// Draft badge
 		await expect.element(page.getByText('draft')).toBeInTheDocument();
 		// Author display name
-		await expect.element(page.getByText('Jane Doe')).toBeInTheDocument();
+		await expect.element(page.getByText('By Jane Doe')).toBeInTheDocument();
 		// Date should contain year
 		await expect.element(page.getByText(/2025/)).toBeInTheDocument();
 	});
@@ -47,7 +45,7 @@ describe('ArticleRow', () => {
 	it('shows "Unknown" when profiles is null', async () => {
 		expect.assertions(1);
 		const article = makeMockArticle({ profiles: null });
-		render(ArticleRow, {
+		render(ArticleCard, {
 			props: {
 				article,
 				userRole: 'viewer',
@@ -56,13 +54,13 @@ describe('ArticleRow', () => {
 			}
 		});
 
-		await expect.element(page.getByText('Unknown')).toBeInTheDocument();
+		await expect.element(page.getByText('By Unknown')).toBeInTheDocument();
 	});
 
-	it('renders published status badge', async () => {
+	it('does not show draft badge for published articles', async () => {
 		expect.assertions(1);
 		const article = makeMockArticle({ status: 'published' });
-		render(ArticleRow, {
+		render(ArticleCard, {
 			props: {
 				article,
 				userRole: 'viewer',
@@ -71,13 +69,13 @@ describe('ArticleRow', () => {
 			}
 		});
 
-		await expect.element(page.getByRole('cell').nth(2).getByText('published')).toBeInTheDocument();
+		await expect.element(page.getByText('draft')).not.toBeInTheDocument();
 	});
 
 	it('shows edit and delete buttons for editors', async () => {
 		expect.assertions(2);
 		const article = makeMockArticle();
-		render(ArticleRow, {
+		render(ArticleCard, {
 			props: {
 				article,
 				userRole: 'editor',
@@ -94,10 +92,10 @@ describe('ArticleRow', () => {
 			.toBeInTheDocument();
 	});
 
-	it('hides edit and delete buttons for viewers', async () => {
-		expect.assertions(2);
+	it('hides edit and delete buttons for viewers (invisible)', async () => {
+		expect.assertions(1);
 		const article = makeMockArticle();
-		render(ArticleRow, {
+		const screen = render(ArticleCard, {
 			props: {
 				article,
 				userRole: 'viewer',
@@ -106,19 +104,18 @@ describe('ArticleRow', () => {
 			}
 		});
 
-		await expect
-			.element(page.getByRole('button', { name: 'Edit article: Test Article Title' }))
-			.not.toBeInTheDocument();
-		await expect
-			.element(page.getByRole('button', { name: 'Delete article: Test Article Title' }))
-			.not.toBeInTheDocument();
+		// Buttons should exist but be invisible (tabindex=-1)
+		const editBtn = screen.container.querySelector(
+			'[aria-label="Edit article: Test Article Title"]'
+		) as HTMLElement;
+		expect(editBtn?.tabIndex).toBe(-1);
 	});
 
 	it('calls onEdit when edit button is clicked', async () => {
 		expect.assertions(1);
 		const article = makeMockArticle();
 		const onEdit = vi.fn();
-		render(ArticleRow, {
+		render(ArticleCard, {
 			props: {
 				article,
 				userRole: 'editor',
@@ -135,7 +132,7 @@ describe('ArticleRow', () => {
 		expect.assertions(1);
 		const article = makeMockArticle();
 		const onDelete = vi.fn();
-		render(ArticleRow, {
+		render(ArticleCard, {
 			props: {
 				article,
 				userRole: 'editor',
@@ -150,8 +147,8 @@ describe('ArticleRow', () => {
 
 	it('has aria-label on status badge', async () => {
 		expect.assertions(1);
-		const article = makeMockArticle({ status: 'published' });
-		const screen = render(ArticleRow, {
+		const article = makeMockArticle({ status: 'draft' });
+		const screen = render(ArticleCard, {
 			props: {
 				article,
 				userRole: 'viewer',
@@ -160,7 +157,7 @@ describe('ArticleRow', () => {
 			}
 		});
 
-		const badge = screen.container.querySelector('[aria-label="Status: published"]');
+		const badge = screen.container.querySelector('[aria-label="Status: draft"]');
 		expect(badge).not.toBeNull();
 	});
 });
