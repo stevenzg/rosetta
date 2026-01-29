@@ -36,10 +36,11 @@ test.describe('Role-based access control', () => {
 		expect(deleteCount).toBeGreaterThan(0);
 	});
 
-	test('unauthenticated user is redirected to login from /articles', async ({ page }) => {
-		await page.goto('http://localhost:4173/articles');
-		// Should redirect to login
-		await page.waitForURL('**/auth/login', { timeout: 10_000 });
+	test('unauthenticated user can view articles on home page', async ({ page }) => {
+		await page.goto('http://localhost:4173/');
+		// Should stay on home page and see articles heading
+		await expect(page.getByRole('heading', { name: 'Articles' })).toBeVisible({ timeout: 10_000 });
+		// Sign in button should be in header
 		await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
 	});
 });

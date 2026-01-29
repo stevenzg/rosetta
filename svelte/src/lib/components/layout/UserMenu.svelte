@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { LogIn, LogOut, User, UserPlus } from 'lucide-svelte'
 	import { getClient } from '$lib/supabase/client'
-	import { goto, invalidateAll } from '$app/navigation'
+	import { invalidateAll } from '$app/navigation'
+	import AuthDialog from '$lib/components/auth/AuthDialog.svelte'
 	import type { UserProfile } from '$lib/types'
 	import type { Session } from '@supabase/supabase-js'
+
+	type AuthMode = 'login' | 'register'
 
 	interface Props {
 		session: Session | null
@@ -12,11 +15,18 @@
 
 	let { session, profile }: Props = $props()
 
+	let authOpen = $state(false)
+	let authMode = $state<AuthMode>('login')
+
+	function openAuth(mode: AuthMode) {
+		authMode = mode
+		authOpen = true
+	}
+
 	async function handleSignOut() {
 		const supabase = getClient()
 		await supabase.auth.signOut()
 		await invalidateAll()
-		await goto('/auth/login')
 	}
 </script>
 
@@ -36,18 +46,22 @@
 		</button>
 	</div>
 {:else}
-	<a
-		href="/auth/register"
+	<button
+		type="button"
+		onclick={() => openAuth('register')}
 		class="inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 		aria-label="Sign up"
 	>
 		<UserPlus class="h-5 w-5" />
-	</a>
-	<a
-		href="/auth/login"
+	</button>
+	<button
+		type="button"
+		onclick={() => openAuth('login')}
 		class="inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 		aria-label="Sign in"
 	>
 		<LogIn class="h-5 w-5" />
-	</a>
+	</button>
 {/if}
+
+<AuthDialog bind:open={authOpen} defaultMode={authMode} onOpenChange={(v) => (authOpen = v)} />

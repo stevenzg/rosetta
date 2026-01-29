@@ -14,5 +14,5 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		}
 	}
 
-	redirect(303, '/articles');
+	redirect(303, '/');
 };

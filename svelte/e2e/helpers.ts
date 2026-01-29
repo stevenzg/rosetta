@@ -21,19 +21,22 @@ export const TEST_VIEWER = {
 	password: 'test-viewer-password'
 };
 
-/** Log in via the UI login form and wait for redirect to /articles. */
+/** Log in via the auth dialog and wait for it to close. */
 export async function login(page: Page, credentials: { email: string; password: string }) {
-	await page.goto(`${BASE_URL}/auth/login`);
+	await page.goto(`${BASE_URL}/`);
+	// Open the sign-in dialog from the header
+	await page.getByRole('button', { name: 'Sign in' }).click();
+	await expect(page.getByRole('dialog')).toBeVisible();
 	await page.getByLabel('Email').fill(credentials.email);
 	await page.getByLabel('Password').fill(credentials.password);
-	await page.getByRole('button', { name: 'Sign in' }).click();
-	// Wait for navigation to articles page
-	await page.waitForURL('**/articles', { timeout: 10_000 });
+	await page.getByRole('button', { name: 'Sign In' }).click();
+	// Wait for dialog to close after successful login
+	await expect(page.getByRole('dialog')).toBeHidden({ timeout: 10_000 });
 }
 
 /** Navigate to the articles list page (assumes already authenticated). */
 export async function goToArticles(page: Page) {
-	await page.goto(`${BASE_URL}/articles`);
+	await page.goto(`${BASE_URL}/`);
 	await page.waitForLoadState('networkidle');
 }
 
@@ -42,7 +45,7 @@ export async function waitForArticleTable(page: Page) {
 	await expect(page.getByRole('table', { name: 'Articles' })).toBeVisible({ timeout: 10_000 });
 }
 
-/** Create an article via the UI (assumes user is an editor on /articles). */
+/** Create an article via the UI (assumes user is an editor on home page). */
 export async function createArticleViaUI(
 	page: Page,
 	data: { title: string; content?: string; status?: 'draft' | 'published' }

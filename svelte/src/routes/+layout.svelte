@@ -10,6 +10,14 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	<title>Rosetta</title>
+	<meta name="description" content="Rosetta - Article management platform for organizing, creating, and managing your content." />
+	<meta name="robots" content="index, follow" />
+	<meta property="og:title" content="Rosetta" />
+	<meta property="og:description" content="Article management platform for organizing, creating, and managing your content." />
+	<meta property="og:type" content="website" />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="Rosetta" />
+	<meta name="twitter:description" content="Article management platform for organizing, creating, and managing your content." />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col">

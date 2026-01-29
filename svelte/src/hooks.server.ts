@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from '$lib/supabase/server';
-import { redirect, type Handle } from '@sveltejs/kit';
+import { type Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const supabase = createServerSupabaseClient(event.cookies);
@@ -19,10 +19,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.session = session;
 	} else {
 		event.locals.session = null;
-	}
-
-	if (event.url.pathname.startsWith('/articles') && !user) {
-		redirect(303, '/auth/login');
 	}
 
 	return resolve(event, {
