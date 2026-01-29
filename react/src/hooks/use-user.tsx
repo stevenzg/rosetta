@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
   parseProfile,
   type UserProfile,
@@ -17,7 +16,17 @@ import {
 } from '@/lib/types/articles'
 import type { User } from '@supabase/supabase-js'
 
-const supabase = createClient()
+let _supabase: ReturnType<
+  Awaited<typeof import('@/lib/supabase/client')>['createClient']
+> | null = null
+
+async function getSupabase() {
+  if (!_supabase) {
+    const { createClient } = await import('@/lib/supabase/client')
+    _supabase = createClient()
+  }
+  return _supabase
+}
 
 interface UserContextValue {
   user: User | null
@@ -49,6 +58,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     ;(async () => {
       try {
+        const supabase = await getSupabase()
         const { data } = await supabase
           .from('profiles')
           .select('id, display_name, role')
@@ -69,28 +79,36 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let ignore = false
+    let subscription: { unsubscribe: () => void } | null = null
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      // Synchronous — no Supabase data queries here to avoid
-      // deadlocking with auth initialization.
+    getSupabase().then((supabase) => {
       if (ignore) return
 
-      setUser(session?.user ?? null)
+      const {
+        data: { subscription: sub },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        // Synchronous — no Supabase data queries here to avoid
+        // deadlocking with auth initialization.
+        if (ignore) return
 
-      if (event === 'INITIAL_SESSION') {
-        setIsLoading(false)
-      }
+        setUser(session?.user ?? null)
+
+        if (event === 'INITIAL_SESSION') {
+          setIsLoading(false)
+        }
+      })
+
+      subscription = sub
     })
 
     return () => {
       ignore = true
-      subscription.unsubscribe()
+      subscription?.unsubscribe()
     }
   }, [])
 
   const signOut = useCallback(async () => {
+    const supabase = await getSupabase()
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)

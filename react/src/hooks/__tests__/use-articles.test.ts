@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  beforeEach,
+  afterEach,
+} from 'vitest'
 import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -40,6 +48,14 @@ const { mockFrom, mockResolvedData } = vi.hoisted(() => {
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ from: mockFrom }),
 }))
+
+// Warm up the dynamic import so the mock module is cached before any test runs.
+// fetchArticlesPage uses `await import('@/lib/supabase/client')` to defer the
+// 200KB Supabase bundle; the first dynamic resolution must complete before
+// React Query can invoke the query function.
+beforeAll(async () => {
+  await import('@/lib/supabase/client')
+})
 
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { useArticles } from '../use-articles'

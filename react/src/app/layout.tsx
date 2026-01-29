@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme/theme-provider'
+import { LazyToaster } from '@/components/ui/lazy-toaster'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { UserProvider } from '@/hooks/use-user'
 import { Header } from '@/components/layout/header'
@@ -32,6 +32,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && (
+          <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
+        )}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -51,7 +56,7 @@ export default function RootLayout({
                 </div>
                 <Footer />
               </div>
-              <Toaster />
+              <LazyToaster />
             </UserProvider>
           </QueryProvider>
         </ThemeProvider>

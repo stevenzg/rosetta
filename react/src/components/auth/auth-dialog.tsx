@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import {
   Dialog,
   DialogContent,
@@ -14,7 +13,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-const supabase = createClient()
+let _supabase: ReturnType<
+  Awaited<typeof import('@/lib/supabase/client')>['createClient']
+> | null = null
+
+async function getSupabase() {
+  if (!_supabase) {
+    const { createClient } = await import('@/lib/supabase/client')
+    _supabase = createClient()
+  }
+  return _supabase
+}
 
 type AuthMode = 'login' | 'register'
 
@@ -76,6 +85,7 @@ export function AuthDialog({
 
     setIsLoading(true)
 
+    const supabase = await getSupabase()
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
       password,
@@ -113,6 +123,7 @@ export function AuthDialog({
 
     setIsLoading(true)
 
+    const supabase = await getSupabase()
     const { error: authError } = await supabase.auth.signUp({
       email: trimmedEmail,
       password,

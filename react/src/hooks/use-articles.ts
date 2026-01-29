@@ -1,11 +1,20 @@
 'use client'
 
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { createClient } from '@/lib/supabase/client'
 import { PAGE_SIZE } from '@/lib/constants'
 import { type Article, parseArticle } from '@/lib/types/articles'
 
-const supabase = createClient()
+let _supabase: ReturnType<
+  Awaited<typeof import('@/lib/supabase/client')>['createClient']
+> | null = null
+
+async function getSupabase() {
+  if (!_supabase) {
+    const { createClient } = await import('@/lib/supabase/client')
+    _supabase = createClient()
+  }
+  return _supabase
+}
 
 interface UseArticlesOptions {
   search: string
@@ -26,6 +35,7 @@ async function fetchArticlesPage({
   cursor: Cursor
   signal?: AbortSignal
 }): Promise<Article[]> {
+  const supabase = await getSupabase()
   let query = supabase
     .from('articles')
     .select(

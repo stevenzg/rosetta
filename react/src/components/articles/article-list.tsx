@@ -28,7 +28,6 @@ import { useArticles } from '@/hooks/use-articles'
 import { useArticleMutations } from '@/hooks/use-article-mutations'
 import { useUser } from '@/hooks/use-user'
 import { queryClient } from '@/lib/query-client'
-import { PAGE_SIZE } from '@/lib/constants'
 import type { Article, ArticleFormData } from '@/lib/types/articles'
 
 type Cursor = { createdAt: string; id: string } | null
@@ -79,12 +78,13 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
   })
 
   // Fetch next page when scrolling near the end
+  const PREFETCH_THRESHOLD = 10
   useEffect(() => {
     const virtualItems = virtualizer.getVirtualItems()
     const lastItem = virtualItems[virtualItems.length - 1]
     if (
       lastItem &&
-      lastItem.index >= articles.length - PAGE_SIZE &&
+      lastItem.index >= articles.length - PREFETCH_THRESHOLD &&
       hasNextPage &&
       !isLoading &&
       !isFetchingNextPage

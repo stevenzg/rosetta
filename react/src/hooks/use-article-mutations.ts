@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { queryClient } from '@/lib/query-client'
 import {
   type Article,
@@ -9,7 +8,17 @@ import {
   parseArticle,
 } from '@/lib/types/articles'
 
-const supabase = createClient()
+let _supabase: ReturnType<
+  Awaited<typeof import('@/lib/supabase/client')>['createClient']
+> | null = null
+
+async function getSupabase() {
+  if (!_supabase) {
+    const { createClient } = await import('@/lib/supabase/client')
+    _supabase = createClient()
+  }
+  return _supabase
+}
 
 // Note: A single `isSubmitting` flag is shared across create, update, and delete
 // operations. This means concurrent mutations are not supported — if one mutation
@@ -46,6 +55,8 @@ export function useArticleMutations(): UseArticleMutationsReturn {
   const createArticle = useCallback(
     async (data: ArticleFormData): Promise<MutationResult<Article | null>> => {
       setState({ isSubmitting: true, error: null })
+
+      const supabase = await getSupabase()
 
       const {
         data: { user },
@@ -94,6 +105,8 @@ export function useArticleMutations(): UseArticleMutationsReturn {
     ): Promise<MutationResult<Article | null>> => {
       setState({ isSubmitting: true, error: null })
 
+      const supabase = await getSupabase()
+
       const { data: article, error } = await supabase
         .from('articles')
         .update({
@@ -125,6 +138,8 @@ export function useArticleMutations(): UseArticleMutationsReturn {
   const deleteArticle = useCallback(
     async (id: string): Promise<MutationResult<boolean>> => {
       setState({ isSubmitting: true, error: null })
+
+      const supabase = await getSupabase()
 
       const { error } = await supabase.from('articles').delete().eq('id', id)
 
