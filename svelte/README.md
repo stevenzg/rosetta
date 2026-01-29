@@ -46,10 +46,10 @@ cp .env.example .env
 
 Required environment variables:
 
-| Variable                   | Description                        |
-| -------------------------- | ---------------------------------- |
-| `PUBLIC_SUPABASE_URL`      | Your Supabase project URL          |
-| `PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous/public key |
+| Variable                     | Description               |
+| ---------------------------- | ------------------------- |
+| `PUBLIC_SUPABASE_URL`        | Your Supabase project URL |
+| `PUBLIC_SUPABASE_PUBLIC_KEY` | Your Supabase public key  |
 
 3. Run database migrations (from the repository root):
 
