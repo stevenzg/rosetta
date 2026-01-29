@@ -5,7 +5,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'react/.next', 'svelte/.svelte-kit'],
+    ignores: ['dist/**', 'node_modules/**', 'react/.next', 'svelte/**'],
   },
   js.configs.recommended,
   {
