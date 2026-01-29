@@ -21,12 +21,33 @@
 		await goto('/auth/login')
 	}
 
+	let menuButtonRef = $state<HTMLButtonElement | undefined>()
+	let menuItemRef = $state<HTMLButtonElement | undefined>()
+
 	function toggleMenu() {
 		menuOpen = !menuOpen
+		if (menuOpen) {
+			// Focus the first menu item when menu opens
+			requestAnimationFrame(() => menuItemRef?.focus())
+		}
 	}
 
 	function closeMenu() {
 		menuOpen = false
+	}
+
+	function handleOverlayKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			closeMenu()
+			menuButtonRef?.focus()
+		}
+	}
+
+	function handleMenuKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			closeMenu()
+			menuButtonRef?.focus()
+		}
 	}
 </script>
 
@@ -34,6 +55,7 @@
 	<div class="relative">
 		<button
 			type="button"
+			bind:this={menuButtonRef}
 			onclick={toggleMenu}
 			class="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-accent"
 			aria-expanded={menuOpen}
@@ -50,13 +72,15 @@
 
 		{#if menuOpen}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="fixed inset-0 z-40" onclick={closeMenu} onkeydown={closeMenu}></div>
+			<div class="fixed inset-0 z-40" onclick={closeMenu} onkeydown={handleOverlayKeydown}></div>
 			<div
 				class="absolute right-0 z-50 mt-1 w-48 rounded-md border border-border bg-popover p-1 shadow-lg"
 				role="menu"
+				onkeydown={handleMenuKeydown}
 			>
 				<button
 					type="button"
+					bind:this={menuItemRef}
 					onclick={handleSignOut}
 					class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-popover-foreground hover:bg-accent"
 					role="menuitem"

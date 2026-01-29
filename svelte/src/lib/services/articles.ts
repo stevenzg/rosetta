@@ -1,3 +1,5 @@
+// TODO: Generate types from Supabase (`supabase gen types typescript`) to replace
+// manual `as unknown as Article` casts with proper type-safe database types.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Article, ArticleCreate, ArticleUpdate, StatusFilter } from '$lib/types';
 import { PAGE_SIZE } from '$lib/constants';

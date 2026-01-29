@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
-
 	interface Props {
 		hasMore: boolean
 		loading: boolean
@@ -10,7 +8,7 @@
 	let { hasMore, loading, onLoadMore }: Props = $props()
 	let sentinel: HTMLDivElement | undefined = $state()
 
-	onMount(() => {
+	$effect(() => {
 		if (!sentinel) return
 
 		const observer = new IntersectionObserver(

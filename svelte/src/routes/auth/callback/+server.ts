@@ -7,7 +7,11 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 
 	if (code) {
 		const supabase = createServerSupabaseClient(cookies);
-		await supabase.auth.exchangeCodeForSession(code);
+		const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+		if (error) {
+			redirect(303, '/auth/login?error=callback_failed');
+		}
 	}
 
 	redirect(303, '/articles');

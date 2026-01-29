@@ -5,16 +5,17 @@
 	interface Props {
 		open: boolean
 		article?: Article | null
+		error?: string | null
 		onClose: () => void
 		onSubmit: (data: ArticleCreate) => Promise<void>
 	}
 
-	let { open, article = null, onClose, onSubmit }: Props = $props()
+	let { open, article = null, error = null, onClose, onSubmit }: Props = $props()
 
 	let title = $state('')
 	let content = $state('')
 	let status = $state<ArticleStatus>('draft')
-	let errors = $state<{ title?: string; status?: string }>({})
+	let validationErrors = $state<{ title?: string; status?: string }>({})
 	let submitting = $state(false)
 
 	const isEdit = $derived(!!article)
@@ -30,8 +31,7 @@
 			content = ''
 			status = 'draft'
 		}
-		errors = {}
-		submitting = false
+		validationErrors = {}
 	})
 
 	function validate(): boolean {
@@ -44,7 +44,7 @@
 		if (status && !['draft', 'published'].includes(status)) {
 			newErrors.status = 'Invalid status'
 		}
-		errors = newErrors
+		validationErrors = newErrors
 		return Object.keys(newErrors).length === 0
 	}
 
@@ -53,8 +53,11 @@
 		if (!validate()) return
 
 		submitting = true
-		await onSubmit({ title: title.trim(), content: content || undefined, status })
-		submitting = false
+		try {
+			await onSubmit({ title: title.trim(), content: content || undefined, status })
+		} finally {
+			submitting = false
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -63,12 +66,12 @@
 </script>
 
 {#if open}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="dialog-title"
+		tabindex="-1"
 		onkeydown={handleKeydown}
 	>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -88,6 +91,12 @@
 				</button>
 			</div>
 
+			{#if error}
+				<div class="mb-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+					{error}
+				</div>
+			{/if}
+
 			<form onsubmit={handleSubmit} class="space-y-4">
 				<div>
 					<label for="article-title" class="mb-1 block text-sm font-medium text-foreground">
@@ -99,13 +108,13 @@
 						bind:value={title}
 						maxlength="255"
 						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
-						class:border-destructive={!!errors.title}
+						class:border-destructive={!!validationErrors.title}
 						placeholder="Article title"
-						aria-invalid={!!errors.title}
-						aria-describedby={errors.title ? 'title-error' : undefined}
+						aria-invalid={!!validationErrors.title}
+						aria-describedby={validationErrors.title ? 'title-error' : undefined}
 					/>
-					{#if errors.title}
-						<p id="title-error" class="mt-1 text-sm text-destructive">{errors.title}</p>
+					{#if validationErrors.title}
+						<p id="title-error" class="mt-1 text-sm text-destructive">{validationErrors.title}</p>
 					{/if}
 				</div>
 
@@ -130,14 +139,14 @@
 						id="article-status"
 						bind:value={status}
 						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
-						aria-invalid={!!errors.status}
-						aria-describedby={errors.status ? 'status-error' : undefined}
+						aria-invalid={!!validationErrors.status}
+						aria-describedby={validationErrors.status ? 'status-error' : undefined}
 					>
 						<option value="draft">Draft</option>
 						<option value="published">Published</option>
 					</select>
-					{#if errors.status}
-						<p id="status-error" class="mt-1 text-sm text-destructive">{errors.status}</p>
+					{#if validationErrors.status}
+						<p id="status-error" class="mt-1 text-sm text-destructive">{validationErrors.status}</p>
 					{/if}
 				</div>
 

@@ -28,8 +28,10 @@
 
 	let formDialogOpen = $state(false)
 	let editingArticle = $state<Article | null>(null)
+	let formError = $state<string | null>(null)
 	let deleteDialogOpen = $state(false)
 	let deletingArticle = $state<Article | null>(null)
+	let deleteError = $state<string | null>(null)
 
 	const hasMore = $derived(articles.length < totalCount)
 
@@ -106,24 +108,35 @@
 	async function handleFormSubmit(formData: ArticleCreate) {
 		if (!data.session) return
 
-		if (editingArticle) {
-			const updated = await updateArticle(supabase, editingArticle.id, formData)
-			articles = articles.map((a) => (a.id === updated.id ? updated : a))
-		} else {
-			const created = await createArticle(supabase, data.session.user.id, formData)
-			articles = [created, ...articles]
-			totalCount += 1
+		formError = null
+		try {
+			if (editingArticle) {
+				const updated = await updateArticle(supabase, editingArticle.id, formData)
+				articles = articles.map((a) => (a.id === updated.id ? updated : a))
+			} else {
+				const created = await createArticle(supabase, data.session.user.id, formData)
+				articles = [created, ...articles]
+				totalCount += 1
+			}
+			formDialogOpen = false
+		} catch (err) {
+			formError = err instanceof Error ? err.message : 'Failed to save article'
 		}
-		formDialogOpen = false
 	}
 
 	async function handleDeleteConfirm() {
 		if (!deletingArticle) return
-		await deleteArticle(supabase, deletingArticle.id)
-		articles = articles.filter((a) => a.id !== deletingArticle!.id)
-		totalCount -= 1
-		deleteDialogOpen = false
-		deletingArticle = null
+
+		deleteError = null
+		try {
+			await deleteArticle(supabase, deletingArticle.id)
+			articles = articles.filter((a) => a.id !== deletingArticle!.id)
+			totalCount -= 1
+			deleteDialogOpen = false
+			deletingArticle = null
+		} catch (err) {
+			deleteError = err instanceof Error ? err.message : 'Failed to delete article'
+		}
 	}
 </script>
 
@@ -165,16 +178,22 @@
 	<ArticleFormDialog
 		open={formDialogOpen}
 		article={editingArticle}
-		onClose={() => (formDialogOpen = false)}
+		error={formError}
+		onClose={() => {
+			formDialogOpen = false
+			formError = null
+		}}
 		onSubmit={handleFormSubmit}
 	/>
 
 	<ArticleDeleteDialog
 		open={deleteDialogOpen}
 		article={deletingArticle}
+		error={deleteError}
 		onClose={() => {
 			deleteDialogOpen = false
 			deletingArticle = null
+			deleteError = null
 		}}
 		onConfirm={handleDeleteConfirm}
 	/>

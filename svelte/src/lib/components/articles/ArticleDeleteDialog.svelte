@@ -5,11 +5,12 @@
 	interface Props {
 		open: boolean
 		article: Article | null
+		error?: string | null
 		onClose: () => void
 		onConfirm: () => Promise<void>
 	}
 
-	let { open, article, onClose, onConfirm }: Props = $props()
+	let { open, article, error = null, onClose, onConfirm }: Props = $props()
 	let deleting = $state(false)
 
 	$effect(() => {
@@ -18,8 +19,11 @@
 
 	async function handleConfirm() {
 		deleting = true
-		await onConfirm()
-		deleting = false
+		try {
+			await onConfirm()
+		} finally {
+			deleting = false
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -28,13 +32,13 @@
 </script>
 
 {#if open && article}
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 		role="alertdialog"
 		aria-modal="true"
 		aria-labelledby="delete-dialog-title"
 		aria-describedby="delete-dialog-desc"
+		tabindex="-1"
 		onkeydown={handleKeydown}
 	>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -54,6 +58,12 @@
 					</p>
 				</div>
 			</div>
+
+			{#if error}
+				<div class="mb-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+					{error}
+				</div>
+			{/if}
 
 			<div class="flex justify-end gap-2">
 				<button
