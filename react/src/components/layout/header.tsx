@@ -26,7 +26,7 @@ export function Header() {
         className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4"
         aria-label="Main navigation"
       >
-        <Link href="/articles" className="text-lg font-semibold tracking-tight">
+        <Link href="/" className="text-lg font-semibold tracking-tight">
           Rosetta
         </Link>
 
