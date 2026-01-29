@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { queryClient } from '@/lib/query-client'
 import {
   type Article,
   type ArticleFormData,
@@ -74,6 +75,7 @@ export function useArticleMutations(): UseArticleMutationsReturn {
       }
 
       setState({ isSubmitting: false, error: null })
+      void queryClient.invalidateQueries({ queryKey: ['articles'] })
       // Cast to `unknown` so narrowing happens inside parseArticle rather than
       // relying on the Supabase SDK's structural type silently satisfying
       // a Record parameter — see PR review discussion.
@@ -111,6 +113,7 @@ export function useArticleMutations(): UseArticleMutationsReturn {
       }
 
       setState({ isSubmitting: false, error: null })
+      void queryClient.invalidateQueries({ queryKey: ['articles'] })
       return {
         data: parseArticle(article as unknown),
         error: null,
@@ -131,6 +134,7 @@ export function useArticleMutations(): UseArticleMutationsReturn {
       }
 
       setState({ isSubmitting: false, error: null })
+      void queryClient.invalidateQueries({ queryKey: ['articles'] })
       return { data: true, error: null }
     },
     []

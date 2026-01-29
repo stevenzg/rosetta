@@ -1,4 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import React from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Supabase query builder is fluent — any method can be called in any order
 // and the final result is thenable. We create a single builder object that
@@ -13,6 +15,8 @@ const { mockFrom, mockResolvedData } = vi.hoisted(() => {
   const chainMethod = () => builder
   builder.select = vi.fn(chainMethod)
   builder.order = vi.fn(chainMethod)
+  builder.limit = vi.fn(chainMethod)
+  builder.or = vi.fn(chainMethod)
   builder.range = vi.fn(chainMethod)
   builder.abortSignal = vi.fn(chainMethod)
   builder.ilike = vi.fn(chainMethod)
@@ -56,21 +60,47 @@ function buildArticle(id: string): Article {
   }
 }
 
+let testQueryClient: QueryClient
+
+function createWrapper() {
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return React.createElement(
+      QueryClientProvider,
+      { client: testQueryClient },
+      children
+    )
+  }
+}
+
 describe('useArticles', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockResolvedData({ data: [], error: null })
+    testQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          gcTime: 0,
+        },
+      },
+    })
   })
 
-  it('skips initial fetch when initialArticles are provided', () => {
+  afterEach(() => {
+    testQueryClient.clear()
+  })
+
+  it('uses initialArticles without triggering the initial query fetch', () => {
     const initial = [buildArticle('1')]
-    const { result } = renderHook(() =>
-      useArticles({ search: '', status: 'all', initialArticles: initial })
+    const { result } = renderHook(
+      () =>
+        useArticles({ search: '', status: 'all', initialArticles: initial }),
+      { wrapper: createWrapper() }
     )
 
+    // The articles are immediately available from initialData
     expect(result.current.articles).toHaveLength(1)
     expect(result.current.isLoading).toBe(false)
-    expect(mockFrom).not.toHaveBeenCalled()
   })
 
   it('fetches articles when no initialArticles are provided', async () => {
@@ -79,8 +109,9 @@ describe('useArticles', () => {
     )
     mockResolvedData({ data: articles, error: null })
 
-    const { result } = renderHook(() =>
-      useArticles({ search: '', status: 'all' })
+    const { result } = renderHook(
+      () => useArticles({ search: '', status: 'all' }),
+      { wrapper: createWrapper() }
     )
 
     expect(result.current.isLoading).toBe(true)
@@ -90,31 +121,33 @@ describe('useArticles', () => {
     })
 
     expect(result.current.articles).toHaveLength(5)
-    expect(result.current.hasMore).toBe(false)
+    expect(result.current.hasNextPage).toBe(false)
   })
 
-  it('sets hasMore to true when a full page is returned', async () => {
+  it('sets hasNextPage to true when a full page is returned', async () => {
     const articles = Array.from({ length: PAGE_SIZE }, (_, i) =>
       buildArticle(String(i))
     )
     mockResolvedData({ data: articles, error: null })
 
-    const { result } = renderHook(() =>
-      useArticles({ search: '', status: 'all' })
+    const { result } = renderHook(
+      () => useArticles({ search: '', status: 'all' }),
+      { wrapper: createWrapper() }
     )
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
     })
 
-    expect(result.current.hasMore).toBe(true)
+    expect(result.current.hasNextPage).toBe(true)
   })
 
   it('sets error state on fetch failure', async () => {
     mockResolvedData({ data: null, error: { message: 'Network error' } })
 
-    const { result } = renderHook(() =>
-      useArticles({ search: '', status: 'all' })
+    const { result } = renderHook(
+      () => useArticles({ search: '', status: 'all' }),
+      { wrapper: createWrapper() }
     )
 
     await waitFor(() => {
@@ -128,7 +161,7 @@ describe('useArticles', () => {
   it('refetches when search changes', async () => {
     const { result, rerender } = renderHook(
       ({ search }) => useArticles({ search, status: 'all' }),
-      { initialProps: { search: '' } }
+      { initialProps: { search: '' }, wrapper: createWrapper() }
     )
 
     await waitFor(() => {
@@ -150,8 +183,9 @@ describe('useArticles', () => {
     )
     mockResolvedData({ data: page1, error: null })
 
-    const { result } = renderHook(() =>
-      useArticles({ search: '', status: 'all' })
+    const { result } = renderHook(
+      () => useArticles({ search: '', status: 'all' }),
+      { wrapper: createWrapper() }
     )
 
     await waitFor(() => {

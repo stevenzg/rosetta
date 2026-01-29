@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { PAGE_SIZE } from '@/lib/constants'
 import { type Article, parseArticle } from '@/lib/types/articles'
@@ -13,133 +13,104 @@ interface UseArticlesOptions {
   initialArticles?: Article[]
 }
 
-interface UseArticlesReturn {
-  articles: Article[]
-  isLoading: boolean
-  isLoadingMore: boolean
-  error: string | null
-  hasMore: boolean
-  fetchNextPage: () => void
-  retry: () => void
-  setArticles: React.Dispatch<React.SetStateAction<Article[]>>
+type Cursor = { createdAt: string; id: string } | null
+
+async function fetchArticlesPage({
+  search,
+  status,
+  cursor,
+  signal,
+}: {
+  search: string
+  status: string
+  cursor: Cursor
+  signal?: AbortSignal
+}): Promise<Article[]> {
+  let query = supabase
+    .from('articles')
+    .select(
+      'id, title, status, created_at, updated_at, published_at, content, author_id, profiles(display_name)'
+    )
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(PAGE_SIZE)
+
+  if (signal) {
+    query = query.abortSignal(signal)
+  }
+
+  if (cursor) {
+    query = query.or(
+      `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
+    )
+  }
+
+  if (search) {
+    const escaped = search.replace(/%/g, '\\%').replace(/_/g, '\\_')
+    query = query.ilike('title', `%${escaped}%`)
+  }
+  if (status && status !== 'all') {
+    query = query.eq('status', status)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const rows: unknown[] = (data ?? []) as unknown[]
+  return rows.map(parseArticle)
+}
+
+function articleQueryKey(search: string, status: string) {
+  return ['articles', { search, status }] as const
 }
 
 export function useArticles({
   search,
   status,
   initialArticles,
-}: UseArticlesOptions): UseArticlesReturn {
+}: UseArticlesOptions) {
   const hasInitial = initialArticles && initialArticles.length > 0
-  const [articles, setArticles] = useState<Article[]>(initialArticles ?? [])
-  const [hasMore, setHasMore] = useState(
-    hasInitial ? initialArticles.length === PAGE_SIZE : true
-  )
-  const [isLoading, setIsLoading] = useState(!hasInitial)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const abortRef = useRef(0)
-  const abortControllerRef = useRef<AbortController | null>(null)
 
-  const fetchArticles = useCallback(
-    async (cursor: { createdAt: string; id: string } | null, reset = false) => {
-      const fetchId = ++abortRef.current
-
-      // Cancel any in-flight request before starting a new one
-      abortControllerRef.current?.abort()
-      const controller = new AbortController()
-      abortControllerRef.current = controller
-
-      if (reset) {
-        setIsLoading(true)
-      } else {
-        setIsLoadingMore(true)
-      }
-      setError(null)
-
-      let query = supabase
-        .from('articles')
-        .select(
-          'id, title, status, created_at, updated_at, published_at, content, author_id, profiles(display_name)'
-        )
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(PAGE_SIZE)
-        .abortSignal(controller.signal)
-
-      if (cursor) {
-        query = query.or(
-          `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
-        )
-      }
-
-      if (search) {
-        const escaped = search.replace(/%/g, '\\%').replace(/_/g, '\\_')
-        query = query.ilike('title', `%${escaped}%`)
-      }
-      if (status && status !== 'all') {
-        query = query.eq('status', status)
-      }
-
-      const { data, error: fetchError } = await query
-
-      if (fetchId !== abortRef.current) return
-
-      if (fetchError) {
-        // Ignore abort errors — they are expected when a new fetch supersedes the old one
-        if (controller.signal.aborted) return
-        setError(fetchError.message)
-      } else {
-        const rows: unknown[] = (data ?? []) as unknown[]
-        const fetched = rows.map(parseArticle)
-        setArticles((prev) => (reset ? fetched : [...prev, ...fetched]))
-        setHasMore(fetched.length === PAGE_SIZE)
-      }
-
-      setIsLoading(false)
-      setIsLoadingMore(false)
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: articleQueryKey(search, status),
+    queryFn: ({ pageParam, signal }) =>
+      fetchArticlesPage({ search, status, cursor: pageParam, signal }),
+    initialPageParam: null as Cursor,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.length < PAGE_SIZE) return undefined
+      const last = lastPage[lastPage.length - 1]
+      return { createdAt: last.created_at, id: last.id }
     },
-    [search, status]
-  )
+    ...(hasInitial &&
+      search === '' &&
+      (status === 'all' || status === '') && {
+        initialData: {
+          pages: [initialArticles],
+          pageParams: [null],
+        },
+      }),
+  })
 
-  // Capture the initial reference. Its identity only changes when
-  // search/status deps change, so this stays stable across Strict Mode remounts.
-  const initialFetchRef = useRef(fetchArticles)
-
-  // Skip the client-side fetch on the initial render when the server already
-  // provided data. When filters change, fetchArticles identity changes and the
-  // guard is bypassed, triggering a fresh fetch.
-  useEffect(() => {
-    if (hasInitial && fetchArticles === initialFetchRef.current) {
-      return
-    }
-    setHasMore(true)
-    fetchArticles(null, true)
-  }, [fetchArticles])
-
-  const fetchNextPage = useCallback(() => {
-    if (!isLoadingMore && hasMore && articles.length > 0) {
-      const last = articles[articles.length - 1]
-      fetchArticles({ createdAt: last.created_at, id: last.id })
-    }
-  }, [fetchArticles, articles, isLoadingMore, hasMore])
-
-  const retry = useCallback(() => {
-    if (articles.length === 0) {
-      fetchArticles(null, true)
-    } else {
-      const last = articles[articles.length - 1]
-      fetchArticles({ createdAt: last.created_at, id: last.id })
-    }
-  }, [fetchArticles, articles])
+  const articles = data?.pages.flatMap((page) => page) ?? []
 
   return {
     articles,
     isLoading,
-    isLoadingMore,
-    error,
-    hasMore,
+    isFetchingNextPage,
+    error: error?.message ?? null,
+    hasNextPage: hasNextPage ?? false,
     fetchNextPage,
-    retry,
-    setArticles,
+    retry: refetch,
   }
 }

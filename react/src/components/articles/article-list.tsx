@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
+import type { InfiniteData } from '@tanstack/react-query'
 import { Plus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -13,7 +14,10 @@ import { ArticleListSkeleton } from '@/components/articles/article-list-skeleton
 import { useArticles } from '@/hooks/use-articles'
 import { useArticleMutations } from '@/hooks/use-article-mutations'
 import { useUser } from '@/hooks/use-user'
+import { queryClient } from '@/lib/query-client'
 import type { Article, ArticleFormData } from '@/lib/types/articles'
+
+type Cursor = { createdAt: string; id: string } | null
 
 interface ArticleListProps {
   initialArticles?: Article[]
@@ -27,12 +31,11 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
   const {
     articles,
     isLoading,
-    isLoadingMore,
+    isFetchingNextPage,
     error,
-    hasMore,
+    hasNextPage,
     fetchNextPage,
     retry,
-    setArticles,
   } = useArticles({ search, status, initialArticles })
 
   const {
@@ -67,20 +70,22 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
     if (
       lastItem &&
       lastItem.index >= articles.length - 3 &&
-      hasMore &&
+      hasNextPage &&
       !isLoading &&
-      !isLoadingMore
+      !isFetchingNextPage
     ) {
       fetchNextPage()
     }
   }, [
     virtualizer.getVirtualItems(),
     articles.length,
-    hasMore,
+    hasNextPage,
     isLoading,
-    isLoadingMore,
+    isFetchingNextPage,
     fetchNextPage,
   ])
+
+  const queryKey = ['articles', { search, status }]
 
   const handleCreate = useCallback(() => {
     setDialogMode('create')
@@ -105,7 +110,17 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
         const result = await createArticle(data)
         const created = result.data
         if (created) {
-          setArticles((prev) => [created, ...prev])
+          queryClient.setQueryData<InfiniteData<Article[], Cursor>>(
+            queryKey,
+            (old) => {
+              if (!old) return old
+              const [first, ...rest] = old.pages
+              return {
+                ...old,
+                pages: [[created, ...(first ?? [])], ...rest],
+              }
+            }
+          )
           setDialogOpen(false)
           toast.success('Article created successfully')
         } else {
@@ -115,8 +130,17 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
         const result = await updateArticle(editingArticle.id, data)
         const updated = result.data
         if (updated) {
-          setArticles((prev) =>
-            prev.map((a) => (a.id === updated.id ? updated : a))
+          queryClient.setQueryData<InfiniteData<Article[], Cursor>>(
+            queryKey,
+            (old) => {
+              if (!old) return old
+              return {
+                ...old,
+                pages: old.pages.map((page) =>
+                  page.map((a) => (a.id === updated.id ? updated : a))
+                ),
+              }
+            }
           )
           setDialogOpen(false)
           toast.success('Article updated successfully')
@@ -125,14 +149,25 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
         }
       }
     },
-    [dialogMode, editingArticle, createArticle, updateArticle, setArticles]
+    [dialogMode, editingArticle, createArticle, updateArticle, queryKey]
   )
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deletingArticle) return
     const result = await deleteArticle(deletingArticle.id)
     if (result.data) {
-      setArticles((prev) => prev.filter((a) => a.id !== deletingArticle.id))
+      queryClient.setQueryData<InfiniteData<Article[], Cursor>>(
+        queryKey,
+        (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) =>
+              page.filter((a) => a.id !== deletingArticle.id)
+            ),
+          }
+        }
+      )
       setDeleteDialogOpen(false)
       setDeletingArticle(null)
       toast.success('Article deleted successfully')
@@ -140,7 +175,7 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
     } else {
       toast.error(result.error ?? 'Failed to delete article')
     }
-  }, [deletingArticle, deleteArticle, setArticles])
+  }, [deletingArticle, deleteArticle, queryKey, createBtn])
 
   return (
     <div className="space-y-6">
@@ -173,7 +208,7 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
           <p className="text-sm text-destructive">
             Something went wrong: {error}
           </p>
-          <Button variant="outline" size="sm" onClick={retry}>
+          <Button variant="outline" size="sm" onClick={() => retry()}>
             <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
             Retry
           </Button>
@@ -187,7 +222,7 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
           No articles found.
         </p>
       ) : (
-        <div ref={listRef} aria-busy={isLoadingMore} aria-live="polite">
+        <div ref={listRef} aria-busy={isFetchingNextPage} aria-live="polite">
           <div
             className="relative w-full"
             style={{ height: virtualizer.getTotalSize() }}
@@ -214,13 +249,13 @@ export function ArticleList({ initialArticles }: ArticleListProps) {
             })}
           </div>
 
-          {isLoadingMore && (
+          {isFetchingNextPage && (
             <div className="py-2">
               <ArticleListSkeleton count={3} />
             </div>
           )}
 
-          {!hasMore && articles.length > 0 && (
+          {!hasNextPage && articles.length > 0 && (
             <p className="py-4 text-center text-sm text-muted-foreground">
               All articles loaded.
             </p>
