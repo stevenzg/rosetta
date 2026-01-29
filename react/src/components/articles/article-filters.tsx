@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { DEBOUNCE_MS, STATUS_OPTIONS } from '@/lib/constants'
 
 interface ArticleFiltersProps {
@@ -63,19 +63,29 @@ export function ArticleFilters({
         />
       </div>
 
-      <Tabs
-        value={currentStatus}
-        onValueChange={onStatusChange}
+      <div
+        role="radiogroup"
         aria-label="Filter articles by status"
+        className="flex h-9 items-center gap-0.5 rounded-lg bg-muted p-[3px] sm:inline-flex"
       >
-        <TabsList>
-          {STATUS_OPTIONS.map((opt) => (
-            <TabsTrigger key={opt.value} value={opt.value}>
-              {opt.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+        {STATUS_OPTIONS.map((opt) => (
+          <Button
+            key={opt.value}
+            variant="ghost"
+            size="sm"
+            role="radio"
+            aria-checked={currentStatus === opt.value}
+            onClick={() => onStatusChange(opt.value)}
+            className={`h-full flex-1 rounded-md px-3 text-sm font-medium sm:flex-initial ${
+              currentStatus === opt.value
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-foreground/70 hover:text-foreground'
+            }`}
+          >
+            {opt.label}
+          </Button>
+        ))}
+      </div>
     </div>
   )
 }

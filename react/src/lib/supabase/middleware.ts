@@ -25,23 +25,8 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Refresh the session by calling getUser(). This does NOT enforce authentication
-  // on the /articles route — unauthenticated users can still view articles, relying
-  // on Supabase RLS to restrict draft visibility. The server-side fetch in
-  // articles/page.tsx runs without a user session and returns only publicly visible
-  // rows (published articles). Authenticated users get their own drafts via the
-  // client-side hook which has the session cookie attached.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const isLoginPage = request.nextUrl.pathname === '/login'
-
-  if (user && isLoginPage) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/articles'
-    return NextResponse.redirect(url)
-  }
+  // Refresh the auth token so cookies stay up-to-date.
+  await supabase.auth.getUser()
 
   return supabaseResponse
 }

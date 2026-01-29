@@ -31,7 +31,6 @@ export function useArticles({
 }: UseArticlesOptions): UseArticlesReturn {
   const hasInitial = initialArticles && initialArticles.length > 0
   const [articles, setArticles] = useState<Article[]>(initialArticles ?? [])
-  const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(
     hasInitial ? initialArticles.length === PAGE_SIZE : true
   )
@@ -40,10 +39,9 @@ export function useArticles({
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef(0)
   const abortControllerRef = useRef<AbortController | null>(null)
-  const initialLoadSkipped = useRef(false)
 
-  const fetchPage = useCallback(
-    async (pageNum: number, reset = false) => {
+  const fetchArticles = useCallback(
+    async (cursor: { createdAt: string; id: string } | null, reset = false) => {
       const fetchId = ++abortRef.current
 
       // Cancel any in-flight request before starting a new one
@@ -58,16 +56,21 @@ export function useArticles({
       }
       setError(null)
 
-      const offset = pageNum * PAGE_SIZE
-
       let query = supabase
         .from('articles')
         .select(
           'id, title, status, created_at, updated_at, published_at, content, author_id, profiles(display_name)'
         )
         .order('created_at', { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1)
+        .order('id', { ascending: false })
+        .limit(PAGE_SIZE)
         .abortSignal(controller.signal)
+
+      if (cursor) {
+        query = query.or(
+          `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
+        )
+      }
 
       if (search) {
         const escaped = search.replace(/%/g, '\\%').replace(/_/g, '\\_')
@@ -86,14 +89,10 @@ export function useArticles({
         if (controller.signal.aborted) return
         setError(fetchError.message)
       } else {
-        // Cast each row to `unknown` before passing to parseArticle so that
-        // genuine runtime validation occurs rather than TypeScript silently
-        // accepting Supabase's structural type (PR #3 review feedback).
         const rows: unknown[] = (data ?? []) as unknown[]
         const fetched = rows.map(parseArticle)
         setArticles((prev) => (reset ? fetched : [...prev, ...fetched]))
         setHasMore(fetched.length === PAGE_SIZE)
-        setPage(pageNum)
       }
 
       setIsLoading(false)
@@ -102,31 +101,36 @@ export function useArticles({
     [search, status]
   )
 
-  // Lifecycle explanation:
-  // `fetchPage` is recreated (via useCallback deps) whenever `search` or `status` changes.
-  // On the very first render, if `initialArticles` were provided by the server, we skip
-  // the client-side fetch (the `initialLoadSkipped` ref guard). On subsequent renders,
-  // when `fetchPage` identity changes due to a filter/search update, `initialLoadSkipped`
-  // is already `true`, so the guard is bypassed and a fresh fetch is triggered.
+  // Capture the initial reference. Its identity only changes when
+  // search/status deps change, so this stays stable across Strict Mode remounts.
+  const initialFetchRef = useRef(fetchArticles)
+
+  // Skip the client-side fetch on the initial render when the server already
+  // provided data. When filters change, fetchArticles identity changes and the
+  // guard is bypassed, triggering a fresh fetch.
   useEffect(() => {
-    if (hasInitial && !initialLoadSkipped.current) {
-      initialLoadSkipped.current = true
+    if (hasInitial && fetchArticles === initialFetchRef.current) {
       return
     }
-    setPage(0)
     setHasMore(true)
-    fetchPage(0, true)
-  }, [fetchPage])
+    fetchArticles(null, true)
+  }, [fetchArticles])
 
   const fetchNextPage = useCallback(() => {
-    if (!isLoadingMore && hasMore) {
-      fetchPage(page + 1)
+    if (!isLoadingMore && hasMore && articles.length > 0) {
+      const last = articles[articles.length - 1]
+      fetchArticles({ createdAt: last.created_at, id: last.id })
     }
-  }, [fetchPage, page, isLoadingMore, hasMore])
+  }, [fetchArticles, articles, isLoadingMore, hasMore])
 
   const retry = useCallback(() => {
-    fetchPage(page, page === 0)
-  }, [fetchPage, page])
+    if (articles.length === 0) {
+      fetchArticles(null, true)
+    } else {
+      const last = articles[articles.length - 1]
+      fetchArticles({ createdAt: last.created_at, id: last.id })
+    }
+  }, [fetchArticles, articles])
 
   return {
     articles,

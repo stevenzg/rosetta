@@ -1,6 +1,6 @@
 export function Footer() {
   return (
-    <footer className="border-t py-6">
+    <footer className="sticky bottom-0 border-t bg-background py-3">
       <div className="mx-auto max-w-5xl px-4 text-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} Rosetta. All rights reserved.</p>
       </div>

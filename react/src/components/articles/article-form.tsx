@@ -43,6 +43,7 @@ export function ArticleForm({
     defaultValues?.status ?? 'draft'
   )
   const [errors, setErrors] = useState<FormErrors>({})
+  const [dirty, setDirty] = useState<Record<string, boolean>>({})
 
   const validate = useCallback((): boolean => {
     const newErrors: FormErrors = {}
@@ -57,6 +58,8 @@ export function ArticleForm({
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }, [title])
+
+  const isTitleValid = title.trim().length > 0 && title.trim().length <= 255
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,9 +80,12 @@ export function ArticleForm({
           value={title}
           onChange={(e) => {
             setTitle(e.target.value)
+            if (!dirty.title) setDirty((prev) => ({ ...prev, title: true }))
             if (errors.title) setErrors({})
           }}
-          onBlur={validate}
+          onBlur={() => {
+            if (dirty.title) validate()
+          }}
           placeholder="Enter article title"
           aria-required="true"
           aria-invalid={!!errors.title}
@@ -110,7 +116,7 @@ export function ArticleForm({
           value={status}
           onValueChange={(val) => setStatus(val as ArticleStatus)}
         >
-          <SelectTrigger id="article-status">
+          <SelectTrigger id="article-status" className="w-full sm:w-[180px]">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
@@ -124,7 +130,7 @@ export function ArticleForm({
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || !isTitleValid}>
           {isSubmitting
             ? mode === 'create'
               ? 'Creating...'

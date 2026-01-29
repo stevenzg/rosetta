@@ -18,7 +18,8 @@ export default async function ArticlesPage() {
       'id, title, status, created_at, updated_at, published_at, content, author_id, profiles(display_name)'
     )
     .order('created_at', { ascending: false })
-    .range(0, PAGE_SIZE - 1)
+    .order('id', { ascending: false })
+    .limit(PAGE_SIZE)
 
   if (error) {
     console.error('Failed to fetch initial articles:', error.message)
