@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import globals from 'globals';
 
 export default [
   {
@@ -16,16 +17,10 @@ export default [
         sourceType: 'module',
       },
       globals: {
-        console: 'readonly',
-        process: 'readonly',
-        Buffer: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        global: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        exports: 'readonly',
+        ...globals.browser,
         React: 'readonly',
+        // Next.js injects `process.env` at build time for NEXT_PUBLIC_* vars
+        process: 'readonly',
       },
     },
     plugins: {
@@ -33,9 +28,35 @@ export default [
     },
     rules: {
       'no-console': 'warn',
-      'no-unused-vars': 'error',
-      '@typescript-eslint/no-unused-vars': 'error',
       'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: [
+      '**/middleware.ts',
+      '**/supabase/server.ts',
+      '**/route.ts',
+      '*.config.{js,mjs,ts}',
+      '**/vitest.config.ts',
+      'eslint.config.mjs',
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'error',
+    },
+  },
+  {
+    files: ['**/*.{js,jsx,mjs}'],
+    rules: {
+      'no-unused-vars': 'error',
     },
   },
 ];
